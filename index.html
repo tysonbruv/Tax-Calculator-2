@@ -1,0 +1,3179 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('simpleTaxAU.theme.v1') === 'dark' ? 'dark' : 'light'; } catch {}</script><title>Simple Tax AU</title>
+  <style>
+    :root {
+      --bg: #0e0e0e;
+      --panel: #161616;
+      --input: #0f0f0f;
+      --border: #333333;
+      --border-soft: #2a2a2a;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --muted2: #7a7a7a;
+      --accent: #ff5f57;
+      --accent2: #ffb347;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+
+    .screen {
+      width: min(100%, 920px);
+      height: auto;
+      overflow: visible;
+      background: var(--panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 22px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(119,119,119,.35) transparent;
+    }
+
+    .screen::-webkit-scrollbar { width: 5px; }
+    .screen::-webkit-scrollbar-thumb {
+      background: rgba(119,119,119,.35);
+      border-radius: 999px;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-top: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .fy-label {
+      min-width: 292px;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .small-btn,
+    .main-btn,
+    .date-btn {
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      height: 34px;
+    }
+
+    .small-btn {
+      padding: 5px 10px;
+      min-width: 53px;
+    }
+
+    .reset-btn { width: 137px; }
+    .help-btn { width: 53px; }
+
+    .tax-mode-wrap {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .segmented-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 360px;
+      max-width: 100%;
+      padding: 4px;
+      background: #202024;
+      border: 1px solid var(--border-soft);
+      border-radius: 13px;
+    }
+
+    .segment-btn {
+      min-width: 0;
+      min-height: 42px;
+      padding: 7px 14px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .segment-btn.active {
+      background: #5b5b61;
+    }
+
+    .company-rate-wrap {
+      display: none;
+      width: 360px;
+      max-width: 100%;
+    }
+
+    .company-rate-label {
+      margin: 0 0 5px 4px;
+      color: var(--muted2);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .company-rate-toggle .segment-btn {
+      min-height: 48px;
+    }
+
+    .segment-rate-main,
+    .segment-rate-sub {
+      display: block;
+    }
+
+    .segment-rate-main {
+      font-size: 15px;
+    }
+
+    .segment-rate-sub {
+      margin-top: 3px;
+      color: #d5d5d5;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .main-top-row {
+      margin-top: 48px;
+    }
+
+    .help-btn-wrap {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .help-hint {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 22px);
+      width: 410px;
+      color: var(--muted2);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: right;
+      pointer-events: none;
+    }
+
+    .help-hint::after {
+      content: "↓";
+      position: absolute;
+      right: 20px;
+      top: calc(100% + 1px);
+      color: var(--muted2);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* Desktop top row: keep FY navigation together and push utility buttons right. */
+    @media (min-width: 681px) {
+      .tax-mode-wrap {
+        width: 100%;
+        align-items: center;
+      }
+
+      .fy-label {
+        min-width: 175px;
+      }
+
+      .reset-btn {
+        margin-left: auto;
+      }
+    }
+
+    .money-area {
+      position: relative;
+      min-height: 124px;
+      margin-top: 10px;
+    }
+
+    .threshold {
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .tax-info {
+      position: absolute;
+      right: 0;
+      top: -6px;
+      width: 334px;
+      text-align: right;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .rate {
+      color: var(--muted2);
+    }
+
+    .total {
+      position: absolute;
+      top: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 74px;
+      height: 14px;
+      background: #2a2a2a;
+      border-radius: 999px;
+      overflow: visible;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #52c96b, var(--accent2), var(--accent));
+      border-radius: 999px;
+      transition: width .18s ease;
+    }
+
+    .bar-bracket-indicators {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bar-bracket-indicator {
+      position: absolute;
+      top: -13px;
+      transform: translateX(-50%);
+      color: #8a8a8a;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .goal {
+      position: absolute;
+      left: 0;
+      top: 100px;
+      color: var(--muted2);
+      font-size: 15px;
+    }
+
+    .entry-area {
+      width: 438px;
+      margin: 20px auto 0;
+    }
+
+    .entry-input {
+      width: 100%;
+      height: 46px;
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      outline: none;
+    }
+
+    .entry-input::placeholder {
+      color: #777;
+    }
+
+    .desc-date-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    #descInput {
+      width: 316px;
+    }
+
+    .date-btn {
+      width: 110px;
+      height: 46px;
+    }
+
+    .button-row {
+      width: 584px;
+      margin: 12px auto 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .main-btn {
+      height: 46px;
+      font-weight: 600;
+    }
+
+    .income-btn { width: 278px; }
+    .deduction-btn { width: 286px; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 56px;
+    }
+
+    .section-head.deductions {
+      margin-top: 16px;
+    }
+
+    .view-btn {
+      width: 110px;
+      height: 34px;
+    }
+
+    .preview-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      min-height: 216px;
+    }
+
+    .card {
+      background: #111111;
+      border-radius: 6px;
+      padding: 10px;
+      min-height: 64px;
+    }
+
+    .card .amount {
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .card .desc {
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .weekly-ad-label {
+      margin-top: 14px;
+      margin-bottom: 6px;
+      color: #6f5ed6;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .01em;
+      text-align: left;
+    }
+
+    .weekly-ad {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  min-height: 0;
+  margin-top: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #101010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+    .weekly-ad {
+      position: relative;
+    }
+
+    .weekly-ad-footer {
+  margin-top: 7px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.weekly-ad-pricing {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.weekly-ad-pricing strong {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.weekly-ad-price-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.ad-open-btn {
+  min-width: 58px;
+  height: 28px;
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.ad-spots-head {
+  margin-top: 18px;
+}
+
+.ad-spots-week {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ad-spots-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.ad-spot-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  background: #111111;
+  border: 1px solid #222222;
+  border-radius: 6px;
+}
+
+.ad-spot-name {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ad-spot-status {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ad-spot-status.available {
+  color: var(--accent2);
+}
+
+.ad-spot-status.taken {
+  color: var(--muted2);
+}
+
+.advertising-current-label {
+  margin-top: 38px;
+}
+
+
+.weekly-ad-timer {
+  display: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.ad-booking-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #111111;
+}
+
+.ad-booking-kicker {
+  color: var(--muted2);
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.ad-booking-date {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.ad-booking-note {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ad-book-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  background: var(--input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.ad-book-btn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.ad-booking-result {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ad-booking-result strong {
+  color: var(--accent2);
+}
+
+
+    .weekly-ad-slide {
+      position: absolute;
+      inset: 20px;
+      opacity: 0;
+      transition: opacity 1.2s ease-in-out;
+      pointer-events: none;
+    }
+
+    .weekly-ad-slide.active {
+      opacity: 1;
+    }
+
+    .weekly-ad-slide img {
+      width: 100%;
+      height: 100%;
+      max-height: 520px;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+    }
+
+    .log-screen { display: none; }
+
+    .log-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .log-title-area {
+      margin-top: 18px;
+    }
+
+    .tip {
+      margin-top: 8px;
+      color: #bdbdbd;
+      font-size: 15px;
+    }
+
+    .count {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .log-delete-hint {
+      margin-top: 4px;
+      color: var(--muted2);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .log-page-status {
+      margin-top: 2px;
+      color: var(--muted2);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .delete-undo-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #111111;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .delete-undo-text {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .delete-undo-btn {
+      flex: 0 0 auto;
+      min-width: 70px;
+      color: var(--accent2);
+      font-weight: 800;
+    }
+
+    .log-nav .view-btn:disabled {
+      opacity: .35;
+      cursor: default;
+      color: var(--muted2);
+      border-color: var(--border-soft);
+    }
+
+    .log-nav {
+      display: flex;
+      gap: 34px;
+      margin-top: 42px;
+    }
+
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 18px;
+    }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 30px;
+      align-items: center;
+      height: 34px;
+      background: #111111;
+      border: 1px solid #222222;
+      padding: 0 8px;
+      color: var(--text);
+    }
+
+    .log-row .log-desc {
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 18px;
+      height: 28px;
+    }
+
+    .empty {
+      color: var(--accent2);
+      margin-top: 8px;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 18px;
+      color: var(--text);
+      width: min(100%, 570px);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    .date-picker-grid {
+      display: grid;
+      grid-template-columns: 188px 1fr;
+      gap: 26px;
+      margin-top: 16px;
+    }
+
+    .picker-label {
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 58px);
+      gap: 6px;
+    }
+
+    .day-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 42px);
+      gap: 5px;
+    }
+
+    .choice-btn {
+      height: 34px;
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .day-grid .choice-btn {
+      height: 32px;
+    }
+
+    .choice-btn.selected {
+      background: #2f2f2f;
+      border: 2px solid #f5f5f5;
+      color: white;
+    }
+
+    .choice-btn.disabled {
+      opacity: .3;
+      pointer-events: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .danger {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .help-text {
+      white-space: pre-wrap;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    .tax-help-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 2px;
+    }
+
+    .tax-help-bigtime-title {
+      margin-bottom: 0;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .tax-help-top-continue {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .tax-help-intro {
+      margin-bottom: 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .tax-help-title {
+      margin-bottom: 1px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .tax-bracket-box {
+      border: 1px solid var(--accent2);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 0;
+    }
+
+    .tax-bracket-grid {
+      display: grid;
+      grid-template-columns: minmax(150px, 1.1fr) 20px minmax(130px, 1fr);
+      row-gap: 10px;
+      align-items: baseline;
+      width: 100%;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tax-bracket-head {
+      color: var(--accent2);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+
+    .tax-bracket-head-left,
+    .tax-bracket-range {
+      text-align: left;
+    }
+
+    .tax-bracket-head-right,
+    .tax-bracket-rate {
+      text-align: left;
+    }
+
+    .tax-bracket-range,
+    .tax-bracket-rate {
+      white-space: nowrap;
+    }
+
+    .tax-bracket-dash {
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .tax-bracket-explain {
+      margin: 8px auto 0;
+      max-width: 500px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .tax-bracket-example {
+      margin-top: 22px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .tax-bracket-example strong {
+      color: var(--text);
+    }
+
+    .tax-example-heading {
+      margin: 0 0 14px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .tax-example-list {
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .tax-example-list li {
+      margin: 0;
+      padding-left: 4px;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .tax-example-detail {
+      display: inline-grid;
+      gap: 14px;
+      width: calc(100% - 8px);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .tax-example-detail p {
+      margin: 0;
+      padding: 0;
+      text-align: left;
+    }
+
+    .tax-example-bordered {
+      border: 1px solid var(--accent2);
+      border-radius: 10px;
+      padding: 14px;
+      width: 100%;
+    }
+
+    .tax-example-red-box {
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .tax-example-red-text {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .tax-example-breakdown {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      width: 100%;
+    }
+
+    .tax-example-breakdown-row {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      width: 100%;
+    }
+
+    .tax-example-breakdown-row span,
+    .tax-example-breakdown-row strong {
+      display: block;
+      margin: 0;
+      text-align: left;
+    }
+
+    .tax-example-breakdown-accent,
+    .tax-example-breakdown-accent span,
+    .tax-example-breakdown-accent strong {
+      color: var(--accent2);
+    }
+
+    .help-accent-bold {
+      color: var(--accent2);
+      font-weight: 800;
+    }
+
+    .tax-example-list li::marker {
+      color: #ffffff;
+      font-size: 1.05em;
+    }
+
+    .tax-bracket-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 420px) {
+      .tax-bracket-grid {
+        grid-template-columns: minmax(132px, 1.15fr) 16px minmax(112px, 1fr);
+        column-gap: 3px;
+        font-size: 13px;
+      }
+
+      .tax-bracket-head {
+        font-size: 12px;
+      }
+
+      .tax-help-intro {
+        font-size: 14px;
+      }
+
+      .tax-help-top-row {
+        gap: 8px;
+      }
+
+      .tax-help-bigtime-title {
+        font-size: 16px;
+      }
+
+      .tax-help-top-continue {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .weekly-ad-label {
+        margin-top: 12px;
+        margin-bottom: 6px;
+        font-size: 17px;
+      }
+
+      .weekly-ad {
+        min-height: 0;
+        margin-top: 0;
+      }
+
+      .weekly-ad-slide {
+        inset: 20px;
+      }
+
+      .weekly-ad-slide img {
+        max-height: 390px;
+      }
+
+      .tax-example-detail {
+        width: calc(100% - 6px);
+      }
+
+      .tax-example-breakdown-row {
+        grid-template-columns: 1fr;
+        gap: 1px;
+      }
+    }
+
+    @media (min-width: 681px) {
+      .top-row {
+        gap: 16px;
+      }
+
+      .section-head {
+        margin-top: 42px;
+      }
+
+      .section-head.deductions {
+        margin-top: 20px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .threshold {
+        display: none;
+      }
+
+      body {
+        align-items: flex-start;
+        padding: 8px;
+      }
+
+      .screen {
+        height: auto;
+        min-height: 100vh;
+        border-radius: 0;
+      }
+
+      .top-row {
+        flex-wrap: wrap;
+      }
+
+      .tax-mode-wrap,
+      .segmented-toggle,
+      .company-rate-wrap {
+        width: 100%;
+      }
+
+      .tax-mode-wrap {
+        margin-top: 16px;
+      }
+
+      .segment-btn {
+        min-height: 44px;
+      }
+
+      .main-top-row {
+        display: grid;
+        grid-template-columns: 53px minmax(0, 1fr) 53px;
+        column-gap: 12px;
+        row-gap: 30px;
+        align-items: center;
+        width: 100%;
+        margin-top: 48px;
+      }
+
+      #prevFY {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .main-top-row .fy-label {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+        width: 100%;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      #nextFY {
+        grid-column: 3;
+        grid-row: 1;
+      }
+
+      .help-btn-wrap {
+        display: contents;
+      }
+
+      .help-hint {
+        position: relative;
+        grid-column: 1 / 4;
+        grid-row: 2;
+        right: auto;
+        bottom: auto;
+        width: 100%;
+        margin: 0;
+        padding-right: 0;
+        font-size: 11px;
+        text-align: right;
+      }
+
+      .help-hint::after {
+        right: 20px;
+        top: calc(100% + 3px);
+      }
+
+      .reset-btn {
+        grid-column: 1 / 3;
+        grid-row: 3;
+        width: 100%;
+        margin: 0;
+      }
+
+      .help-btn {
+        grid-column: 3;
+        grid-row: 3;
+        width: 53px;
+      }
+
+      .fy-label {
+        min-width: 200px;
+      }
+
+      .tax-info {
+        position: static;
+        text-align: left;
+        width: auto;
+        padding-top: 26px;
+      }
+
+      .money-area {
+        min-height: 160px;
+      }
+
+      .total {
+        top: 68px;
+      }
+
+      .bar {
+        top: 100px;
+      }
+
+      .goal {
+        top: 126px;
+      }
+
+      .entry-area,
+      .button-row {
+        width: 100%;
+      }
+
+      #descInput {
+        width: calc(100% - 122px);
+      }
+
+      .button-row {
+        gap: 12px;
+      }
+
+      .income-btn,
+      .deduction-btn {
+        width: 50%;
+      }
+
+      .date-picker-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .day-grid {
+        grid-template-columns: repeat(7, minmax(34px, 1fr));
+      }
+
+      .month-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .log-top {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+      }
+
+      .log-nav {
+        display: contents;
+      }
+
+      #incomeBack,
+      #deductionBack,
+      #incomeNewer,
+      #incomeOlder,
+      #deductionNewer,
+      #deductionOlder {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        white-space: nowrap;
+      }
+    }
+  </style>
+<meta name="theme-color" content="#f5f5f7"><meta name="description" content="A clear place for your income, deductions and financial-year totals."><style>
+/* Shared palette, app layout, cards, supporting screens, then phone layout. */
+:root {
+  color-scheme: light;
+  --bg:#f5f5f7; --panel:#fff; --input:#f7f7f9; --border:#e2e4ea; --border-soft:#e8e9ee;
+  --text:#1d1d1f; --muted:#6d6e78; --muted2:#858792; --accent:#0071e3; --accent2:#426b91;
+  --accent-soft:#edf4ff; --accent-line:#d7e5f8; --red:#bc414b; --green:#26754f; --hover:#eeeef2;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-synthesis:none;
+}
+:root[data-theme="dark"] {
+  color-scheme:dark;
+  --bg:#101113; --panel:#1c1d20; --input:#25272d; --border:#393c45; --border-soft:#30333b;
+  --text:#f5f5f7; --muted:#adafba; --muted2:#9699a4; --accent:#80b8ff; --accent2:#bfd2ec;
+  --accent-soft:#1e2c40; --accent-line:#31445f; --red:#ff9ca0; --green:#8bcba7; --hover:#2a2d34;
+}
+[hidden] { display:none!important; }
+body { display:block; padding:0; font-family:inherit; -webkit-font-smoothing:antialiased; }
+button,input { font:inherit; }
+button { touch-action:manipulation; }
+button:disabled { cursor:default; opacity:.4; }
+button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid #78b4ff; outline-offset:3px; }
+.tax-shell { max-width:1120px; margin:0 auto; padding:0 36px; }
+.app-header { min-height:94px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid var(--border); }
+.app-brand { display:flex; align-items:center; gap:11px; color:var(--text); text-decoration:none; }
+.app-mark { width:34px; height:34px; border-radius:10px; background:#1d1d1f; display:grid; place-items:center; flex:none; }
+.app-mark svg { width:23px; height:23px; fill:none; stroke:white; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.app-brand strong { display:block; font-size:17px; font-weight:650; letter-spacing:-.4px; }
+.app-brand small { display:block; color:var(--muted); font-size:10px; margin-top:3px; }
+.header-actions { display:flex; align-items:center; gap:22px; }
+.device-controls { display:flex; align-items:flex-end; flex-direction:column; gap:10px; }
+.device-note { color:var(--muted2); font-size:10px; }
+.device-note::before { content:""; display:inline-block; width:4px; height:4px; margin:0 6px 2px 0; border-radius:50%; background:var(--muted2); }
+.theme-toggle { display:flex; align-items:center; gap:8px; padding:0; border:0; background:transparent; color:var(--muted); font-size:10px; cursor:pointer; }
+.theme-toggle svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.4; }
+.theme-switch { width:27px; height:16px; padding:2px; border-radius:20px; background:var(--border); }
+.theme-switch span { display:block; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0002; transition:transform .15s; }
+.theme-toggle[aria-checked="true"] .theme-switch { background:#0071e3; }
+.theme-toggle[aria-checked="true"] .theme-switch span { transform:translateX(11px); }
+.screen { width:100%; padding:0; border:0; border-radius:0; background:transparent; overflow:visible; }
+.workspace-head { padding:42px 0 29px; }
+.eyebrow { font-size:9px; font-weight:600; letter-spacing:1.4px; color:var(--muted); margin:0 0 12px; line-height:1.5; }
+h1 { font-size:39px; line-height:1.16; letter-spacing:-1.5px; font-weight:630; }
+h2 { font-size:20px; line-height:1.3; letter-spacing:-.5px; font-weight:610; }
+.workspace-head>p:last-child { color:var(--muted); font-size:13px; line-height:1.8; margin:13px 0 0; }
+.tax-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:24px; }
+.tax-mode-wrap { margin:0; width:254px; flex:0 0 auto; gap:12px; }
+.segmented-toggle { width:100%; border:0; border-radius:11px; background:var(--border-soft); padding:4px; }
+.segment-btn { color:var(--muted); font-size:12px; font-weight:550; min-height:35px; border-radius:8px; line-height:1.4; }
+.segment-btn.active { color:var(--text); background:var(--panel); box-shadow:0 1px 4px #0000000a; }
+.company-rate-wrap { width:100%; }
+.company-rate-label { font-size:10px; font-weight:500; color:var(--muted); margin:0 0 7px 2px; }
+.company-rate-toggle .segment-btn { min-height:45px; }
+.segment-rate-main { font-size:13px; }
+.segment-rate-sub { color:var(--muted); font-size:9px; font-weight:400; }
+.top-row.main-top-row { margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.fy-label { min-width:0; width:auto; color:var(--text); font-size:12px; padding:0 7px; white-space:nowrap; }
+.small-btn,.main-btn,.date-btn,.choice-btn,.ad-book-btn { height:auto; min-height:38px; border:1px solid var(--border); border-radius:9px; padding:8px 13px; background:var(--input); color:var(--text); font-size:12px; font-weight:500; line-height:1.5; }
+.small-btn:hover,.date-btn:hover { background:var(--hover); }
+#prevFY,#nextFY { min-width:34px; width:34px; min-height:38px; font-size:20px; padding:3px; }
+.year-actions { position:relative; margin-left:8px; }
+.year-actions summary { cursor:pointer; list-style:none; color:var(--muted); font-size:11px; padding:12px 2px; }
+.year-actions summary::-webkit-details-marker { display:none; }
+.year-actions .reset-btn { position:absolute; right:0; top:100%; width:160px; z-index:5; background:var(--panel); color:var(--red); box-shadow:0 8px 30px #0001; }
+.help-btn { min-width:48px; width:auto; background:transparent; border:0; color:var(--muted); }
+.dashboard-grid { display:grid; grid-template-columns:minmax(0,1.23fr) minmax(300px,1fr); gap:20px; align-items:stretch; }
+.panel { background:var(--panel); border:1px solid var(--border-soft); border-radius:23px; padding:27px; box-shadow:0 4px 20px #11132b02; }
+.money-area { position:relative; min-height:0; margin:0; display:flex; flex-direction:column; }
+.money-area .eyebrow { margin-bottom:16px; }
+.total { position:static; transform:none; width:auto; text-align:left; font-size:clamp(37px,4.8vw,53px); font-weight:600; line-height:1.15; letter-spacing:-2px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.tax-info { position:static; width:auto; text-align:left; margin-top:12px; padding:0; color:var(--muted); font-size:12px; line-height:1.8; min-height:39px; }
+.tax-info:has(#taxEstimate:empty):has(#rateLabel:empty) { display:none; }
+#taxEstimate:empty { display:none; }
+#taxEstimate { color:var(--text); font-weight:500; }
+.rate { color:var(--muted); }
+.summary-metrics { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:24px 0 0; padding:21px 0 0; border-top:1px solid var(--border-soft); }
+.summary-metrics dt { font-size:11px; color:var(--muted); margin-bottom:7px; }
+.summary-metrics dd { margin:0; font-size:21px; font-weight:550; letter-spacing:-.5px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.bar { position:relative; inset:auto; height:5px; margin:35px 0 13px; background:var(--border); width:100%; }
+.bar-fill { background:#0071e3; min-height:5px; }
+.bar-bracket-indicator { color:var(--muted2); font-size:10px; font-weight:500; top:-12px; }
+.threshold { display:none; }
+.goal { position:static; color:var(--muted); font-size:10px; line-height:1.8; margin-top:auto; }
+.entry-card h2 { margin:0; }
+.entry-card>.panel-description { color:var(--muted); font-size:12px; line-height:1.8; margin:8px 0 22px; }
+.entry-area { width:100%; margin:0; }
+.entry-area label { display:block; color:var(--muted); font-size:11px; margin:0 0 8px; font-weight:500; }
+.entry-area label[for="descInput"] { margin-top:17px; }
+.entry-input { height:46px; border-radius:10px; padding:11px 13px; font-size:14px; }
+.entry-input::placeholder { color:var(--muted2); }
+.desc-date-row { gap:9px; margin-top:0; }
+#descInput { width:100%; min-width:0; margin:0; }
+.date-btn { flex:0 0 auto; width:auto; min-width:76px; max-width:105px; min-height:46px; height:auto; padding:8px 11px; font-size:11px; white-space:nowrap; }
+.button-row { width:100%; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:20px 0 0; }
+.main-btn { width:100%; min-width:0; height:auto; min-height:43px; border-radius:10px; padding:11px 8px; }
+.income-btn { background:#0071e3; border-color:#0071e3; color:#fff; }
+.income-btn:hover { background:#0062c4; }
+.deduction-btn { background:var(--input); }
+.deduction-btn:hover { background:var(--hover); }
+.history-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+.section-head,.section-head.deductions { margin:0; gap:15px; }
+.section-head h2 { font-size:19px; }
+.view-btn { width:auto; min-width:0; height:auto; min-height:32px; padding:6px 10px; font-size:10px; }
+.preview-list { margin-top:19px; min-height:164px; gap:0; }
+.card { display:grid; grid-template-columns:auto minmax(0,1fr); gap:18px; align-items:center; background:transparent; border-radius:0; padding:16px 0; min-height:59px; border-top:1px solid var(--border-soft); }
+.card:first-child { border-top:0; }
+.card .amount { font-size:14px; font-weight:550; margin:0; font-variant-numeric:tabular-nums; }
+.card .desc { font-size:11px; text-align:right; line-height:1.8; }
+.empty { margin:0; color:var(--muted2); font-size:12px; line-height:1.8; padding:45px 8px; text-align:center; }
+.noticeboard { margin-top:20px; display:grid; grid-template-columns:1fr minmax(240px,340px); gap:32px; align-items:center; }
+.noticeboard-copy h2 { font-size:23px; margin:0 0 12px; }
+.noticeboard-copy>p:last-child { font-size:12px; color:var(--muted); line-height:1.8; max-width:280px; }
+.weekly-ad-label { font-size:9px; font-weight:550; letter-spacing:1.2px; color:var(--muted); margin:0 0 13px; }
+.weekly-ad { background:var(--input); border-color:var(--border-soft); border-radius:12px; padding:0; }
+.weekly-ad-slide { inset:10px; }
+.weekly-ad-slide img { border-radius:7px; }
+.weekly-ad-footer { margin-top:12px; align-items:baseline; gap:14px; }
+.weekly-ad-pricing { font-size:10px; color:var(--muted2); line-height:1.8; }
+.weekly-ad-pricing strong { color:var(--muted); font-size:11px; font-weight:500; }
+.weekly-ad-timer { font-size:10px; font-weight:400; color:var(--muted2); }
+.ad-open-btn { min-height:29px; height:auto; min-width:0; font-size:10px; padding:4px 9px; }
+.ad-art-fallback { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); line-height:1.7; }
+.ad-art-fallback svg { width:26px; height:26px; fill:none; stroke:var(--muted2); stroke-width:1.4; margin-bottom:13px; }
+.ad-art-fallback strong { font-size:13px; font-weight:500; }
+.ad-art-fallback small { font-size:9px; margin-top:5px; color:var(--muted2); }
+.app-footer { display:flex; justify-content:space-between; gap:20px; margin:34px 0 24px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted2); font-size:10px; }
+.log-screen { max-width:880px; margin:34px auto 0; }
+.log-top { gap:15px; }
+.log-nav { gap:9px; margin-top:0; }
+.log-title-area { margin:27px 0 22px; }
+.log-title-area h2 { font-size:31px; letter-spacing:-1px; }
+.tip,.count { color:var(--muted); font-size:12px; line-height:1.8; margin-top:8px; }
+.count { font-size:11px; }
+.log-page-status { font-size:10px; line-height:1.8; color:var(--muted2); margin-top:12px; }
+.log-list { gap:8px; margin:0; }
+.log-row { height:auto; min-height:66px; border:1px solid var(--border-soft); border-radius:13px; background:var(--panel); padding:14px 17px; grid-template-columns:minmax(70px,110px) minmax(0,1fr) 34px; gap:14px; font-size:13px; }
+.log-row .log-desc { font-size:11px; line-height:1.7; }
+.delete-btn { color:var(--red); min-height:34px; height:auto; border-radius:8px; }
+.delete-btn:hover { background:var(--input); }
+.delete-undo-bar { padding:12px 15px; border-radius:11px; background:var(--accent-soft); border-color:var(--accent-line); margin-top:15px; }
+.delete-undo-text { font-size:11px; }
+.delete-undo-btn { color:var(--accent); font-weight:500; }
+.log-ad { max-width:340px; margin:32px auto 0; padding:20px; background:var(--panel); border:1px solid var(--border-soft); border-radius:20px; }
+.ad-spot-row,.ad-booking-panel { background:var(--panel); border-color:var(--border-soft); border-radius:13px; padding:14px 17px; }
+.ad-spot-name,.ad-booking-date { font-size:13px; font-weight:550; }
+.ad-spot-status { font-size:11px; font-weight:500; }
+.ad-spot-status.available { color:var(--green); }
+.ad-book-btn { background:#0071e3; color:white; border-color:#0071e3; font-weight:500; }
+.ad-spots-week,.ad-booking-note,.ad-booking-result { font-size:12px; color:var(--muted); line-height:1.8; }
+.modal-backdrop { background:#11172266; backdrop-filter:blur(5px); padding:20px; }
+.modal { position:relative; width:min(100%,590px); max-height:90vh; border-radius:23px; padding:28px; box-shadow:0 20px 100px #0003; }
+.modal h2 { font-size:23px; }
+.modal-actions { gap:9px; margin-top:25px; flex-wrap:wrap; }
+.modal-actions .small-btn { min-height:40px; }
+#dateDone,#helpContinue { background:#0071e3; color:white; border-color:#0071e3; }
+.danger { background:var(--red); border-color:var(--red); color:var(--panel); }
+.date-picker-grid { grid-template-columns:1fr 1.45fr; gap:20px; margin-top:24px; }
+.picker-label { font-size:11px; color:var(--muted); }
+.month-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.day-grid { grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.choice-btn,.day-grid .choice-btn { height:36px; min-height:36px; padding:0; font-size:11px; border-radius:8px; }
+.choice-btn.selected { border:1px solid var(--accent-line); background:var(--accent-soft); color:var(--accent); }
+.help-text { font-size:13px; line-height:1.8; padding-top:10px; }
+.help-close { position:absolute; right:16px; top:12px; width:34px; min-width:0; min-height:34px; padding:4px; border:0; background:transparent; color:var(--muted); font-size:23px; z-index:2; }
+.tax-help-title,.tax-help-bigtime-title { font-size:20px; font-weight:600; letter-spacing:-.4px; }
+.tax-help-intro,.tax-bracket-box { background:var(--input); border-color:var(--border); border-radius:13px; color:var(--text); }
+.tax-help-intro { font-size:12px; line-height:1.8; font-weight:400; }
+.tax-bracket-head { color:var(--muted); font-size:11px; font-weight:500; }
+.tax-bracket-range,.tax-bracket-rate,.tax-bracket-explain,.tax-bracket-note { font-size:12px; line-height:1.8; }
+.tax-example-detail,.tax-example-bordered,.tax-example-red-box { background:var(--input); border-color:var(--border); color:var(--text); }
+.tax-example-red-text { color:var(--red); }
+html.tax-modal-open { overflow:hidden; }
+@media(max-width:780px) {
+  .tax-shell { padding:0 24px; }
+  .tax-toolbar { flex-wrap:wrap; gap:19px; }
+  .dashboard-grid { grid-template-columns:1fr 1fr; gap:16px; }
+  .panel { padding:22px; }
+  .total { font-size:39px; }
+  .entry-card>.panel-description { font-size:11px; }
+  .card { grid-template-columns:1fr; gap:5px; }
+  .card .desc { text-align:left; }
+}
+@media(max-width:600px) {
+  .tax-shell { padding:0 20px; }
+  .app-header { min-height:82px; gap:10px; }
+  .app-brand { gap:9px; }
+  .app-brand strong { font-size:15px; }
+  .app-brand small { font-size:9px; }
+  .app-mark { width:31px; height:31px; }
+  .header-actions { gap:9px; }
+  .device-note,.theme-toggle { font-size:9px; }
+  .device-controls { gap:9px; }
+  .help-btn { min-width:32px; font-size:11px; padding:7px 3px; }
+  .workspace-head { padding:29px 0 24px; }
+  h1 { font-size:32px; letter-spacing:-1.1px; }
+  .workspace-head>p:last-child { font-size:12px; }
+  .tax-toolbar { gap:17px; margin-bottom:20px; }
+  .tax-mode-wrap,.segmented-toggle,.company-rate-wrap { width:100%; }
+  .segment-btn { font-size:12px; }
+  .top-row.main-top-row { width:100%; gap:6px; flex-wrap:nowrap; }
+  .main-top-row .fy-label { flex:1; min-width:0; width:auto; font-size:11px; padding:0 3px; text-align:center; }
+  #prevFY,#nextFY { width:31px; min-width:31px; min-height:34px; }
+  .year-actions { margin-left:6px; flex:none; }
+  .year-actions summary { font-size:10px; }
+  .dashboard-grid,.history-grid { grid-template-columns:1fr; gap:16px; }
+  .panel { padding:24px 21px; border-radius:21px; }
+  .total { font-size:47px; letter-spacing:-1.8px; }
+  .tax-info { min-height:0; font-size:12px; }
+  .summary-metrics { margin-top:22px; }
+  .summary-metrics dd { font-size:22px; }
+  .entry-card>.panel-description { font-size:12px; margin-bottom:20px; }
+  .entry-input { font-size:16px; }
+  .button-row { gap:9px; }
+  .main-btn { min-height:45px; font-size:12px; }
+  .history-grid { margin-top:16px; }
+  .preview-list { min-height:105px; margin-top:15px; }
+  .card { grid-template-columns:auto minmax(0,1fr); gap:14px; }
+  .card .desc { text-align:right; }
+  .noticeboard { margin-top:16px; grid-template-columns:1fr; gap:18px; }
+  .noticeboard-copy h2 { font-size:21px; margin-bottom:8px; }
+  .noticeboard-copy>p:last-child { display:none; }
+  .noticeboard .weekly-ad-label { display:none; }
+  .log-screen { margin-top:26px; }
+  .log-title-area h2 { font-size:28px; }
+  .log-top,.log-nav { flex-wrap:nowrap; gap:8px; }
+  #incomeBack,#deductionBack,#incomeNewer,#incomeOlder,#deductionNewer,#deductionOlder { width:auto; min-width:0; font-size:11px; }
+  .log-row { grid-template-columns:minmax(60px,85px) minmax(0,1fr) 28px; padding:13px; gap:10px; }
+  .modal { padding:26px 21px 23px; }
+  .date-picker-grid { grid-template-columns:1fr; gap:22px; }
+  .choice-btn,.day-grid .choice-btn { min-height:38px; height:38px; }
+  .tax-bracket-grid { grid-template-columns:minmax(0,1.2fr) 10px minmax(0,1fr); gap:7px; }
+  .tax-bracket-range,.tax-bracket-rate { white-space:normal; font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; scroll-behavior:auto!important; } }
+</style></head>
+<body>
+  <div class="tax-shell"><header class="app-header"><a class="app-brand" href="#mainScreen"><span class="app-mark" aria-hidden="true"><svg viewbox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="3"></rect><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 18h2m4-3v3"></path></svg></span><span><strong>Simple Tax AU</strong><small>A little less admin.</small></span></a><div class="header-actions"><div class="device-controls"><span class="device-note">On this device</span><button class="theme-toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark theme"><svg viewbox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"></path></svg><span>Dark theme</span><span class="theme-switch" aria-hidden="true"><span></span></span></button></div><button class="small-btn help-btn" id="helpBtn" aria-label="Open help">Help</button>
+      </div></header><main id="mainScreen" class="screen">
+    <div class="workspace-head"><p class="eyebrow">THE OVERVIEW</p><h1>Your year, in view.</h1><p>Income, deductions and a clearer picture.</p></div><div class="tax-toolbar"><div class="tax-mode-wrap">
+      <div class="segmented-toggle tax-mode-toggle" role="group" aria-label="Tax structure">
+        <button class="segment-btn active" id="soleTraderMode" type="button">Sole Trader</button>
+        <button class="segment-btn" id="companyMode" type="button">Company</button>
+      </div>
+
+      <div class="company-rate-wrap" id="companyRateWrap">
+        <div class="company-rate-label">Company tax rate</div>
+        <div class="segmented-toggle company-rate-toggle" role="group" aria-label="Company tax rate">
+          <button class="segment-btn active" id="company25" type="button">
+            <span class="segment-rate-main">25%</span>
+            <span class="segment-rate-sub">Base Rate</span>
+          </button>
+          <button class="segment-btn" id="company30" type="button">
+            <span class="segment-rate-main">30%</span>
+            <span class="segment-rate-sub">Standard</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-row main-top-row">
+      <button class="small-btn" id="prevFY" aria-label="Previous financial year">‹</button>
+      <div class="fy-label" id="fyLabel">Financial Year: 2025-2026</div>
+      <button class="small-btn" id="nextFY" aria-label="Next financial year">›</button>
+      <details class="year-actions"><summary>Year options</summary><button class="small-btn reset-btn" id="resetBtn">Reset financial year</button>
+      </details></div>
+
+    </div><div class="dashboard-grid"><section class="money-area panel">
+      <p class="eyebrow">TAXABLE INCOME</p><div class="total" id="incomeDisplay">$0</div>
+      <div class="tax-info">
+        <div id="taxEstimate"></div>
+        <div id="rateLabel" class="rate"></div>
+      </div>
+      <dl class="summary-metrics"><div><dt>Income</dt><dd id="ui-income-total">$0</dd></div><div><dt>Deductions</dt><dd id="ui-deduction-total">$0</dd></div></dl><div class="bar">
+        <div class="bar-fill" id="barFill"></div>
+        <div class="bar-bracket-indicators" id="barBracketIndicators" aria-hidden="true"></div>
+      </div>
+      <div class="threshold">$18,200</div>
+      <div class="goal">The goal is to bring this back to $18,200.</div>
+    </section>
+
+    <section class="entry-card panel" aria-labelledby="entry-title"><h2 id="entry-title">Add an entry.</h2><p class="panel-description">An amount, a description. All in one place.</p><section class="entry-area">
+      <label for="amountInput">Amount</label><input id="amountInput" class="entry-input" type="number" min="0" max="999999999.99" step="0.01" placeholder="$0.00" inputmode="decimal">
+      <label for="descInput">Description</label><div class="desc-date-row">
+        <input id="descInput" class="entry-input" type="text" maxlength="42" placeholder="What was it for?">
+        <button id="dateBtn" class="date-btn" aria-label="Entry date">Date</button>
+      </div>
+    </section>
+
+    <section class="button-row">
+      <button class="main-btn income-btn" id="addIncome">Add income</button>
+      <button class="main-btn deduction-btn" id="addDeduction">Add deduction</button>
+    </section>
+
+    </section></div><div class="history-grid"><section class="panel history-panel">
+      <div class="section-head">
+        <h2>Income</h2>
+        <button class="small-btn view-btn" id="viewIncome">View all</button>
+      </div>
+      <div id="incomePreview" class="preview-list"></div>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="section-head deductions">
+        <h2>Deductions</h2>
+        <button class="small-btn view-btn" id="viewDeductions">View all</button>
+      </div>
+      <div id="deductionPreview" class="preview-list"></div>
+
+      </section>
+  </div><section class="noticeboard panel"><div class="noticeboard-copy"><p class="eyebrow">COMMUNITY NOTICEBOARD</p><h2>Something local.</h2><p>A little space for the businesses around you.</p></div><div class="noticeboard-art"><div class="weekly-ad-label">Advertisement for the week</div>
+
+<div class="weekly-ad" aria-label="Advertisement for the week">
+
+  <div class="weekly-ad-slide">
+    <img src="./advertisements/Ransom-Grimus-Burgers.jpg" alt="Ransom Grimus Burgers advertisement">
+  </div>
+
+  <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee83.jpg" alt="QAZ Vee 83 advertisement">
+        </div>
+
+  <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee82.jpg" alt="QAZ Vee 82 advertisement">
+        </div>
+
+  <div class="weekly-ad-slide">
+    <img src="./advertisements/VHSRewind4.jpg" alt="VHS Rewind 4 advertisement">
+  </div>
+
+</div>
+
+<div class="weekly-ad-footer">
+
+  <div class="weekly-ad-pricing">
+    <div class="weekly-ad-price-row"><strong>Weekly Advertising — $20</strong><button class="small-btn ad-open-btn" type="button">Book</button></div>
+    <div>Maximum 5 advertisers per week.</div>
+  </div>
+
+  <div class="weekly-ad-timer">1:00</div>
+
+</div>
+    </div></section></main>
+
+  <section id="incomeScreen" class="screen log-screen">
+    <div class="log-top">
+      <button class="small-btn" id="incomeBack">Back</button>
+      <div class="log-nav">
+        <button class="small-btn view-btn" id="incomeNewer">Newer</button>
+        <button class="small-btn view-btn" id="incomeOlder">Older</button>
+      </div>
+    </div>
+    <div class="log-title-area">
+      <h2>Income Log</h2>
+      <div class="tip">Enter your daily total after work</div>
+      <div class="count" id="incomeCount">0 / 365 entries stored</div>
+      
+      <div class="log-page-status" id="incomePageStatus">0 / 73 • Page 1 of 1</div>
+      <div class="delete-undo-bar" id="incomeUndoBar">
+        <div class="delete-undo-text">Deleted income entry</div>
+        <button class="small-btn delete-undo-btn" id="incomeUndoBtn" type="button">Undo</button>
+      </div>
+    </div>
+    <div id="incomeLog" class="log-list"></div>
+
+      <div class="log-ad"><div class="weekly-ad-label">Advertisement for the week</div>
+
+      <div class="weekly-ad" aria-label="Advertisement for the week">
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/Ransom-Grimus-Burgers.jpg" alt="Ransom Grimus Burgers advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee83.jpg" alt="QAZ Vee 83 advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee82.jpg" alt="QAZ Vee 82 advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+    <img src="./advertisements/VHSRewind4.jpg" alt="VHS Rewind 4 advertisement">
+  </div>
+
+      </div>
+
+      <div class="weekly-ad-footer">
+        <div class="weekly-ad-pricing">
+          <div class="weekly-ad-price-row"><strong>Weekly Advertising — $20</strong><button class="small-btn ad-open-btn" type="button">Book</button></div>
+          <div>Maximum 5 advertisers per week.</div>
+        </div>
+
+        <div class="weekly-ad-timer">1:00</div>
+      </div>
+  </div></section>
+
+  <section id="deductionScreen" class="screen log-screen">
+    <div class="log-top">
+      <button class="small-btn" id="deductionBack">Back</button>
+      <div class="log-nav">
+        <button class="small-btn view-btn" id="deductionNewer">Newer</button>
+        <button class="small-btn view-btn" id="deductionOlder">Older</button>
+      </div>
+    </div>
+    <div class="log-title-area">
+      <h2>Deduction Log</h2>
+      <div class="tip">Enter your daily total after work</div>
+      <div class="count" id="deductionCount">0 / 365 entries stored</div>
+      
+      <div class="log-page-status" id="deductionPageStatus">0 / 73 • Page 1 of 1</div>
+      <div class="delete-undo-bar" id="deductionUndoBar">
+        <div class="delete-undo-text">Deleted deduction entry</div>
+        <button class="small-btn delete-undo-btn" id="deductionUndoBtn" type="button">Undo</button>
+      </div>
+    </div>
+    <div id="deductionLog" class="log-list"></div>
+
+      <div class="log-ad"><div class="weekly-ad-label">Advertisement for the week</div>
+
+      <div class="weekly-ad" aria-label="Advertisement for the week">
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/Ransom-Grimus-Burgers.jpg" alt="Ransom Grimus Burgers advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee83.jpg" alt="QAZ Vee 83 advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/QAZVee82.jpg" alt="QAZ Vee 82 advertisement">
+        </div>
+
+        <div class="weekly-ad-slide">
+          <img src="./advertisements/VHSRewind4.jpg" alt="VHS Rewind 4 advertisement">
+        </div>
+
+      </div>
+
+      <div class="weekly-ad-footer">
+        <div class="weekly-ad-pricing">
+          <div class="weekly-ad-price-row"><strong>Weekly Advertising — $20</strong><button class="small-btn ad-open-btn" type="button">Book</button></div>
+          <div>Maximum 5 advertisers per week.</div>
+        </div>
+
+        <div class="weekly-ad-timer">1:00</div>
+      </div>
+  </div></section>
+
+
+  <section id="advertisingScreen" class="screen log-screen">
+    <div class="log-top">
+      <button class="small-btn" id="advertisingBack">Back</button>
+    </div>
+
+    <div class="log-title-area ad-spots-head">
+      <h2>Advertising Spots</h2>
+      <div class="tip">Weekly Advertising — $20</div>
+      <div class="ad-spots-week" id="adSpotsWeek">Checking the next available week...</div>
+    </div>
+
+    <div class="ad-spots-list" id="adSpotsList">
+      <div class="ad-spot-row">
+        <div class="ad-spot-name">Checking spots...</div>
+        <div class="ad-spot-status taken">—</div>
+      </div>
+    </div>
+
+    <div class="ad-booking-panel">
+      <div class="ad-booking-kicker">Next available advertising week</div>
+      <div class="ad-booking-date">Checking availability...</div>
+      <div class="ad-booking-note">Maximum 5 advertisers per week. You will see the exact run dates before paying.</div>
+      <button class="ad-book-btn" type="button">Check booking — $20</button>
+      <div class="ad-booking-result"></div>
+    </div>
+
+    <div class="log-ad"><div class="weekly-ad-label advertising-current-label">Advertisement for the week</div>
+
+    <div class="weekly-ad" aria-label="Advertisement for the week">
+      <div class="weekly-ad-slide">
+        <img src="./advertisements/Ransom-Grimus-Burgers.jpg" alt="Ransom Grimus Burgers advertisement">
+      </div>
+
+      <div class="weekly-ad-slide">
+        <img src="./advertisements/QAZVee83.jpg" alt="QAZ Vee 83 advertisement">
+      </div>
+
+      <div class="weekly-ad-slide">
+        <img src="./advertisements/QAZVee82.jpg" alt="QAZ Vee 82 advertisement">
+      </div>
+
+      <div class="weekly-ad-slide">
+        <img src="./advertisements/VHSRewind4.jpg" alt="VHS Rewind 4 advertisement">
+      </div>
+    </div>
+
+    <div class="weekly-ad-footer">
+      <div class="weekly-ad-pricing">
+        <div><strong>Weekly Advertising — $20</strong></div>
+        <div>Maximum 5 advertisers per week.</div>
+      </div>
+      <div class="weekly-ad-timer">1:00</div>
+    </div>
+  </div></section>
+
+  <footer class="app-footer"><span>Simple Tax AU</span><span>One entry at a time.</span></footer></div><div class="modal-backdrop" id="dateModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Select entry date">
+      <h2>Select date</h2>
+      <div class="date-picker-grid">
+        <div>
+          <div class="picker-label">Month</div>
+          <div class="month-grid" id="monthGrid"></div>
+        </div>
+        <div>
+          <div class="picker-label">Day</div>
+          <div class="day-grid" id="dayGrid"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="small-btn" id="dateClear">Clear</button>
+        <button class="small-btn" id="dateCancel">Cancel</button>
+        <button class="small-btn" id="dateDone">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="How to use Simple Tax AU">
+      <button class="small-btn help-close" id="close-help" type="button" aria-label="Close help">×</button><div id="helpText" class="help-text"></div>
+      <div class="modal-actions">
+        <button class="small-btn" id="helpContinue">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="resetModal">
+    <div class="modal" style="max-width:340px" role="dialog" aria-modal="true" aria-label="Reset financial year">
+      <div id="resetText" class="help-text"></div>
+      <div class="modal-actions">
+        <button class="small-btn" id="resetNo">No</button>
+        <button class="small-btn danger" id="resetYes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = 18200;
+    const BAR_CAP = 150000;
+    const MAX_ENTRIES = 365;
+    const LOG_PAGE_SIZE = 73;
+
+    // Weekly advertising booking settings.
+    // The HTML is ready for a real global 5-slot queue and Apple purchase.
+    // To make it live, the native iPhone build must connect StoreKit and a
+    // backend must return the real paid/reserved count for each week.
+    const AD_PRICE_AUD = 20;
+    const AD_SLOTS_PER_WEEK = 5;
+    const AD_PRODUCT_ID = "simple_tax_au_weekly_advertising";
+    const AD_SUBMISSION_EMAIL = "YOUR-AD-EMAIL@example.com";
+
+    // Local TEST counts only. Use these while testing the booking dates.
+    // Example:
+    // "2026-09-07": 5,  // full
+    // "2026-09-14": 3   // 2 spots left
+    const AD_TEST_WEEKLY_COUNTS = {
+    };
+
+    function taxRulesForYear(startYear) {
+      if (startYear <= 2023) {
+        return {
+          brackets: [
+            { from: 0, to: 18200, rate: 0 },
+            { from: 18200, to: 45000, rate: 0.19 },
+            { from: 45000, to: 120000, rate: 0.325 },
+            { from: 120000, to: 180000, rate: 0.37 },
+            { from: 180000, to: Infinity, rate: 0.45 }
+          ]
+        };
+      }
+
+      if (startYear <= 2025) {
+        return {
+          brackets: [
+            { from: 0, to: 18200, rate: 0 },
+            { from: 18200, to: 45000, rate: 0.16 },
+            { from: 45000, to: 135000, rate: 0.30 },
+            { from: 135000, to: 190000, rate: 0.37 },
+            { from: 190000, to: Infinity, rate: 0.45 }
+          ]
+        };
+      }
+
+      if (startYear === 2026) {
+        return {
+          brackets: [
+            { from: 0, to: 18200, rate: 0 },
+            { from: 18200, to: 45000, rate: 0.15 },
+            { from: 45000, to: 135000, rate: 0.30 },
+            { from: 135000, to: 190000, rate: 0.37 },
+            { from: 190000, to: Infinity, rate: 0.45 }
+          ]
+        };
+      }
+
+      return {
+        brackets: [
+          { from: 0, to: 18200, rate: 0 },
+          { from: 18200, to: 45000, rate: 0.14 },
+          { from: 45000, to: 135000, rate: 0.30 },
+          { from: 135000, to: 190000, rate: 0.37 },
+          { from: 190000, to: Infinity, rate: 0.45 }
+        ]
+      };
+    }
+
+    function rateText(rate) {
+      const cents = rate * 100;
+      return Number.isInteger(cents) ? `${cents}c` : `${cents.toFixed(1)}c`;
+    }
+
+    function taxBracketHelpHTML() {
+      const rules = taxRulesForYear(currentFYStart);
+      const headerRow = `<div class="tax-bracket-head tax-bracket-head-left">Your yearly make</div><div></div><div class="tax-bracket-head tax-bracket-head-right">Governments take</div>`;
+      const rows = rules.brackets.map((bracket, index) => {
+        let range = "";
+        let rate = "";
+
+        if (index === 0) {
+          range = "$0 - $18,200";
+          rate = "Tax free";
+        } else {
+          const lower = (bracket.from + 1).toLocaleString("en-AU");
+          range = Number.isFinite(bracket.to)
+            ? `$${lower} - $${bracket.to.toLocaleString("en-AU")}`
+            : `$${lower}+`;
+          rate = `${rateText(bracket.rate)} per $1`;
+        }
+
+        return `<div class="tax-bracket-range">${range}</div><div class="tax-bracket-dash">—</div><div class="tax-bracket-rate">${rate}</div>`;
+      }).join("");
+
+      const exampleIncome = 138000;
+      const exampleTax = calcProgressiveTax(exampleIncome);
+      const exampleBracket = rules.brackets.find(item => exampleIncome > item.from && exampleIncome <= item.to) || rules.brackets[rules.brackets.length - 1];
+      const exampleRate = rateText(exampleBracket.rate);
+
+      return `
+        <div class="tax-help-top-row">
+          <div class="tax-help-bigtime-title">PAY ATTENTION MR BIG TIME</div>
+          <button class="small-btn tax-help-top-continue" id="helpContinueTop" type="button">Continue</button>
+        </div>
+        <div class="tax-help-intro">Read this bro. Actually read it. Unless you're one of those "smart" ones who thinks they already know everything, move on. But if you're tired of making money and still somehow ending up broke, read below. Learn the game. Stop moving like a peasant. Read it. Then read it again. Then read it again.</div>
+        <div class="tax-help-title">AUSTRALIAN TAX BRACKETS</div>
+        <div class="tax-bracket-box">
+          <div class="tax-bracket-grid">${headerRow}${rows}</div>
+          <div class="tax-bracket-explain">That's just how it works. if you make money, you owe the Government a certain percentage of that money. Don't get angry at me, i didn't make it up. But let's get into what happens if you <strong>Gamble the Governments money down below.</strong> <strong>READ IT!</strong></div>
+        </div>
+
+        <div class="tax-bracket-example">
+          <div class="tax-example-heading">Now really understand what those cents mean.</div>
+          <ul class="tax-example-list">
+            <li>Lets say you made <strong>$138,000</strong> for the entire year. Look at the table above — where does it put you?</li>
+            <li>Exactly. that puts you in the <strong>37%</strong> part, right? Look at the table above again.</li>
+            <li>For this simple example, forget the full tax calculation for a second. Pretend every $1 of <strong>$138,000</strong> has <strong>37c owing</strong> on it.</li>
+            <li><strong>$138,000 × 37% = $51,060.</strong></li>
+            <li>Which means you owe the Government <strong>$51,060</strong> at the end of this year, right?</li>
+            <li>So imagine you made $138,000 this year. Instead of taking that $51,060, putting it somewhere safe and leaving it there for the Government, you spent the entire $138,000 at the casino trying to double it — and lost the lot.</li>
+            <li>Your wallet now says <strong>$0</strong>. But in this simple example, you still have <strong>$51,060</strong> that was meant for the Government. How are you going to pay it when the money is already gone?</li>
+            <li>And don't forget: if you start making money again while you dropped back down to <strong>$0</strong>, you are in that <strong>37c</strong> bracket, each new $1 has another <strong>37c</strong> owing on it as well. People forget that part when they gamble it. Picture it, really picture it, you spent the entire <strong>$138,000</strong> and went <strong>ALL</strong> the way down to <strong>$0</strong>, you owe the Government <strong>$51,060</strong>, you have <strong>$0</strong>, you go and make more new money the next day and guess what, you owe <strong>37c</strong> for every $1. Even though you're back at <strong>$0</strong>, you make <strong>$1,000</strong> the next day, guess what, you owe <strong>$370</strong> on that <strong>$1,000</strong>. Are you cracking the code yet?</li>
+            <li class="tax-example-detail-item">
+              <div class="tax-example-detail tax-example-bordered">
+                <p>You were supposed to separate <strong>$51,060</strong> from the <strong>$138,000</strong> you made.</p>
+
+                <div class="tax-example-breakdown tax-example-breakdown-accent">
+                  <div class="tax-example-breakdown-row"><span><strong>So you make:</strong></span><strong>$138,000</strong></div>
+                  <div class="tax-example-breakdown-row"><span><strong>Your take:</strong></span><strong>$86,940</strong></div>
+                  <div class="tax-example-breakdown-row"><span><strong>The Government’s take:</strong></span><strong>$51,060</strong></div>
+                </div>
+
+                <p>You were physically supposed to separate that <strong>$51,060</strong> from the <strong>$138,000</strong>, leaving you with <strong>$86,940</strong> to treat as your money. That <strong>$51,060</strong> needed to stay put so you could pay the tax bill to the ATO when it was due at the end of the year.</p>
+
+                <p>But you went and spent the entire <strong>$138,000</strong> at the casino trying to double it — and lost the lot.</p>
+
+                <p>Your wallet is now <strong>$0</strong>.</p>
+
+                <p><strong>How do you pay the $51,060 back, bro?</strong></p>
+
+                <div class="tax-example-detail">
+  <p class="tax-example-red-box"><strong>$138,000 → blew it all → $0 → still have a $51,060 tax problem → make $1,000 the next day → owe $370 from the $1,000 → leaves you with $630</strong></p>
+
+  <p class="tax-example-red-text">$0 with $51,060 owing</p>
+
+  <p class="tax-example-breakdown-accent"><strong>So you make the next day: $1,000</strong></p>
+
+  <div class="tax-example-breakdown tax-example-breakdown-accent">
+    <div class="tax-example-breakdown-row"><span><strong>Your take:</strong></span><strong>$630</strong></div>
+    <div class="tax-example-breakdown-row"><span><strong>The Government’s take:</strong></span><strong>$370</strong></div>
+  </div>
+
+  <p><strong style="color: var(--accent2);">$51,060 + $370 = $51,430 owing to the Government.</strong></p>
+  <p><strong>You owe 37c for EVERY NEW $1 you make while you’re in that 37c bracket.</strong></p>
+</div>
+
+                <p>Someone who has just started making money, feels like they're killing it, and hasn't yet internalised that revenue sitting in their account isn't necessarily all theirs to spend.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="tax-bracket-note">$18,200 is the tax-free threshold. That is why the tracker says the goal is to bring taxable income back toward $18,200. IMPORTANT: Companies do not get the $18,200 tax-free threshold. Sole traders get that benefit because, in the real game, you’re taxed as an individual. Companies DO NOT get that benefit in the real world — companies are taxed under a different structure and can make more sense as a business grows. Income tax estimate only; Medicare levy, tax offsets and other adjustments are not included.</div>
+      `;
+    }
+
+    function companyTaxHelpHTML() {
+      const selectedPercent = Math.round(companyTaxRate * 100);
+      const selectedCents = rateText(companyTaxRate);
+      const exampleIncome = 100000;
+      const exampleDeductions = 20000;
+      const exampleTaxable = exampleIncome - exampleDeductions;
+      const exampleTax = roundCurrency(exampleTaxable * companyTaxRate);
+
+      return `
+        <div class="tax-help-top-row">
+          <div class="tax-help-bigtime-title">COMPANY MODE</div>
+          <button class="small-btn tax-help-top-continue" id="helpContinueTop" type="button">Continue</button>
+        </div>
+
+        <div class="tax-help-intro">Company tax works differently. There is no $18,200 individual tax-free threshold here. Pick the company rate that applies, then the tracker keeps it simple.</div>
+
+        <div class="tax-help-title">COMPANY TAX</div>
+
+        <div class="tax-bracket-box">
+          <div class="tax-bracket-grid">
+            <div class="tax-bracket-head tax-bracket-head-left">Company setting</div><div></div><div class="tax-bracket-head tax-bracket-head-right">Governments take</div>
+            <div class="tax-bracket-range">25% Base Rate</div><div class="tax-bracket-dash">—</div><div class="tax-bracket-rate">25c per $1</div>
+            <div class="tax-bracket-range">30% Standard</div><div class="tax-bracket-dash">—</div><div class="tax-bracket-rate">30c per $1</div>
+          </div>
+
+          <div class="tax-bracket-explain">You currently selected <strong>${selectedPercent}%</strong>. In this tracker that means <strong>${selectedCents} owing for every $1 of taxable company income.</strong></div>
+        </div>
+
+        <div class="tax-bracket-example">
+          <div class="tax-example-heading">Simple company example.</div>
+          <ul class="tax-example-list">
+            <li>Company income: <strong>${money(exampleIncome)}</strong></li>
+            <li>Deductions: <strong>${money(exampleDeductions)}</strong></li>
+            <li>Taxable company income: <strong>${money(exampleTaxable)}</strong></li>
+            <li><strong>${money(exampleTaxable)} × ${selectedPercent}% = ${money(exampleTax, true)} tax estimate.</strong></li>
+          </ul>
+        </div>
+
+        <div class="tax-bracket-note">The 25% / 30% selector is manual. This app does not decide whether a company qualifies for the 25% base rate. Company mode is a simple estimate based on the rate you select.</div>
+      `;
+    }
+
+    function dataStorageHelpSlide() {
+      return {
+        type: "text",
+        content: "YOUR DATA\n\nData is stored on this device locally.\n\nIf you delete the app, the income and deduction logs you entered will be gone too. There is no account or online backup holding a copy of them.\n\nSo once you delete the app, that’s it. Gone.\n\nWrite down or keep a copy of any logs you entered for each financial year before you do delete the app, just in case you ever need to prove where the numbers came from. Tax audits do happen. Take care."
+      };
+    }
+
+    function helpSlides() {
+      if (taxMode === "company") {
+        return [
+          { type: "text", content: "INCOME\\n\\nIncome is money in.\\n\\nMoney the company earns goes in here.\\n\\nThat is INCOME." },
+          { type: "text", content: "DEDUCTION\\n\\nA deduction is money the company spent in order to make its income.\\n\\nDeductions reduce taxable company income.\\n\\nThose are DEDUCTIONS." },
+          { type: "brackets", content: companyTaxHelpHTML() },
+          { type: "html", content: "WHY NO $18,200?\\n\\nThe $18,200 tax-free threshold is for Australian resident individuals. A company is a separate tax structure, so this tracker applies the company rate you selected from the first $1 of positive taxable company income." },
+          dataStorageHelpSlide()
+        ];
+      }
+
+      return [
+        { type: "text", content: "INCOME\n\nIncome is money in.\n\nYou sold a $5 sandwich today.\nSomeone paid you $5 into your bank today.\n\nMoney into your bank, is \"income\"\n\nThat is INCOME." },
+        { type: "text", content: "DEDUCTION\n\nA deduction is money you spent on your business in order to actually GET the income.\n\nExample: $3 bread loaf, $5 peanut butter, and a $50 cool butter knife to spread it.\n\nYou spent money in order for you to make money.\n\nThose are DEDUCTIONS." },
+        { type: "brackets", content: taxBracketHelpHTML() },
+        { type: "html", content: "WHY $18,200?\n\n$18,200 is the tax-free threshold set by the Australian Government for Australian residents.\n\nThat is why the tracker says the goal is to bring taxable income back toward $18,200: <span class='help-accent-bold'>deductions reduce taxable income</span>, and income at or below the threshold has no basic income tax in this tracker." },
+        dataStorageHelpSlide()
+      ];
+    }
+
+    let incomes = [];
+    let deductions = [];
+    let incomeLogPage = 0;
+    let deductionLogPage = 0;
+    let selectedMonth = 0;
+    let selectedDay = 0;
+    let pickerMonth = 0;
+    let pickerDay = 0;
+    let helpSlide = 0;
+
+    let taxMode = localStorage.getItem("taxTracker.taxMode") === "company"
+      ? "company"
+      : "soleTrader";
+
+    let companyTaxRate = Number(localStorage.getItem("taxTracker.companyTaxRate")) === 0.30
+      ? 0.30
+      : 0.25;
+
+    const MONEY_LIMIT = 999999999.99;
+    const MONEY_LIMIT_CENTS = 99999999999;
+
+    const now = new Date();
+    const baseFYStart = now.getMonth() + 1 >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+    let currentFYStart = Number(localStorage.getItem("taxTracker.currentFY")) || baseFYStart;
+
+    function fyText() {
+      return `${currentFYStart}-${currentFYStart + 1}`;
+    }
+
+    function key(prefix) {
+      // Preserve all existing Sole Trader storage keys exactly as they were.
+      // Company gets its own separate Income/Deduction logs for each FY.
+      if (taxMode === "company") {
+        return `taxTracker.company.${prefix}${currentFYStart}`;
+      }
+      return `taxTracker.${prefix}${currentFYStart}`;
+    }
+
+    function cleanDesc(s) {
+      return String(s || "").replace(/[\t\n\r]/g, " ").trim().slice(0, 42);
+    }
+
+    function monthShortName(m) {
+      return ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m] || "";
+    }
+
+    function daysInMonth(m) {
+      if (m === 2) return 29;
+      if ([4, 6, 9, 11].includes(m)) return 30;
+      return 31;
+    }
+
+    function selectedDateText() {
+      if (!selectedMonth || !selectedDay) return "";
+      return `${selectedDay} ${monthShortName(selectedMonth)}`;
+    }
+
+    function buildSavedDescWithDate(desc) {
+      desc = cleanDesc(desc);
+      const dt = selectedDateText();
+      if (!dt) return desc;
+      if (!desc) return dt;
+      return cleanDesc(`${dt} - ${desc}`);
+    }
+
+    function money(value, cents = false) {
+      const n = Number(value) || 0;
+      const abs = Math.abs(n);
+      const formatted = abs.toLocaleString("en-AU", {
+        minimumFractionDigits: cents ? 2 : 0,
+        maximumFractionDigits: cents ? 2 : 0
+      });
+      return `${n < 0 ? "-$" : "$"}${formatted}`;
+    }
+
+    function moneySmart(value) {
+      const n = roundCurrency(value);
+      const hasCents = Math.abs(Math.round(n * 100)) % 100 !== 0;
+      return money(n, hasCents);
+    }
+
+    function roundCurrency(value) {
+      return Math.round((Number(value) || 0) * 100) / 100;
+    }
+
+    function clampMoney(value) {
+      const cents = Math.round((Number(value) || 0) * 100);
+      const limitedCents = Math.max(-MONEY_LIMIT_CENTS, Math.min(MONEY_LIMIT_CENTS, cents));
+      return limitedCents / 100;
+    }
+
+    function taxableWholeDollars(income) {
+      // The tax-bracket UI is expressed in whole-dollar ranges (for example
+      // $18,201-$45,000), so ignore cents when deciding which bracket applies.
+      // This prevents $18,200.50 from displaying as though it were $18,201.
+      return Math.max(Math.floor(roundCurrency(income)), 0);
+    }
+
+    function calcProgressiveTax(income) {
+      const x = taxableWholeDollars(income);
+      const rules = taxRulesForYear(currentFYStart);
+      let tax = 0;
+
+      for (const bracket of rules.brackets) {
+        if (bracket.rate === 0 || x <= bracket.from) continue;
+        const upper = Number.isFinite(bracket.to) ? Math.min(x, bracket.to) : x;
+        tax += Math.max(0, upper - bracket.from) * bracket.rate;
+      }
+
+      return roundCurrency(tax);
+    }
+
+    function marginalRateLabel(income) {
+      const x = taxableWholeDollars(income);
+      if (x <= BASE) return "";
+
+      const rules = taxRulesForYear(currentFYStart);
+      const bracket = rules.brackets.find(item => x <= item.to) || rules.brackets[rules.brackets.length - 1];
+      return `${rateText(bracket.rate)} owing for each $1`;
+    }
+
+    function renderBracketIndicators(income) {
+      const holder = document.getElementById("barBracketIndicators");
+      if (!holder) return;
+
+      holder.innerHTML = "";
+
+      // Company mode uses a flat selected rate, so there are no progressive
+      // bracket-section indicators.
+      if (taxMode === "company") return;
+
+      const x = taxableWholeDollars(income);
+      const rules = taxRulesForYear(currentFYStart);
+
+      // Skip the tax-free threshold and the first taxable bracket.
+      // Each remaining "from" value marks the next bracket boundary.
+      const boundaries = rules.brackets
+        .slice(2)
+        .map(bracket => bracket.from)
+        .filter(boundary => boundary > BASE && boundary < BAR_CAP);
+
+      boundaries.forEach(boundary => {
+        // Only show the tiny mark after the user has actually crossed
+        // into that bracket (e.g. $45,001 means x > 45,000).
+        if (x <= boundary) return;
+
+        const pct = ((boundary - BASE) / (BAR_CAP - BASE)) * 100;
+
+        const mark = document.createElement("span");
+        mark.className = "bar-bracket-indicator";
+        mark.textContent = "l";
+        mark.style.left = `${Math.max(0, Math.min(100, pct))}%`;
+
+        holder.appendChild(mark);
+      });
+    }
+
+    function calcCurrentTax(income) {
+      if (taxMode === "company") {
+        const taxable = Math.max(roundCurrency(income), 0);
+        return roundCurrency(taxable * companyTaxRate);
+      }
+
+      return calcProgressiveTax(income);
+    }
+
+    function currentRateLabel(income) {
+      if (taxMode === "company") {
+        if (roundCurrency(income) <= 0) return "";
+        return `${rateText(companyTaxRate)} owing for each $1`;
+      }
+
+      return marginalRateLabel(income);
+    }
+
+    function totalCents(list) {
+      return list.reduce((sum, e) => {
+        const entryCents = Math.round(Math.abs(clampMoney(e.amount)) * 100);
+        return sum + entryCents;
+      }, 0);
+    }
+
+    function totalOf(list) {
+      return totalCents(list) / 100;
+    }
+
+    function saveCurrentFY() {
+      localStorage.setItem(key("i"), JSON.stringify(incomes));
+      localStorage.setItem(key("d"), JSON.stringify(deductions));
+      localStorage.setItem("taxTracker.currentFY", String(currentFYStart));
+      localStorage.setItem("taxTracker.taxMode", taxMode);
+      localStorage.setItem("taxTracker.companyTaxRate", String(companyTaxRate));
+    }
+
+    function loadCurrentFY() {
+      try {
+        const savedIncomes = JSON.parse(localStorage.getItem(key("i")) || "[]");
+        const savedDeductions = JSON.parse(localStorage.getItem(key("d")) || "[]");
+
+        incomes = Array.isArray(savedIncomes)
+          ? savedIncomes.map(entry => ({
+              ...entry,
+              amount: Math.abs(clampMoney(entry && entry.amount))
+            }))
+          : [];
+
+        deductions = Array.isArray(savedDeductions)
+          ? savedDeductions.map(entry => ({
+              ...entry,
+              amount: Math.abs(clampMoney(entry && entry.amount))
+            }))
+          : [];
+      } catch {
+        incomes = [];
+        deductions = [];
+      }
+    }
+
+    function addEntry(isIncome) {
+      const amountInput = document.getElementById("amountInput");
+      const rawAmount = Number(amountInput.value);
+      if (!rawAmount || rawAmount <= 0) return;
+
+      const amount = Math.abs(clampMoney(rawAmount));
+      amountInput.value = amount.toFixed(2);
+
+      const entry = {
+        amount,
+        desc: buildSavedDescWithDate(document.getElementById("descInput").value)
+      };
+
+      const target = isIncome ? incomes : deductions;
+      if (target.length >= MAX_ENTRIES) target.shift();
+      target.push(entry);
+
+      if (isIncome) incomeLogPage = 0;
+      else deductionLogPage = 0;
+
+      document.getElementById("amountInput").value = "";
+      document.getElementById("descInput").value = "";
+      selectedMonth = 0;
+      selectedDay = 0;
+      renderDateButton();
+      updateUI();
+    }
+
+    function renderDateButton() {
+      document.getElementById("dateBtn").textContent = selectedDateText() || "Date";
+    }
+
+    function renderPreviews() {
+      renderPreview("incomePreview", incomes, false);
+      renderPreview("deductionPreview", deductions, true);
+    }
+
+    function renderPreview(id, list, deduction) {
+      const el = document.getElementById(id);
+      el.innerHTML = "";
+
+      const latest = list.slice(-3).reverse();
+      if (!latest.length) {
+        el.innerHTML = `<div class="empty">${deduction ? "No deductions added yet." : "No income added yet."}</div>`;
+        return;
+      }
+
+      latest.forEach(entry => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="amount">${deduction ? "-" : ""}${moneySmart(entry.amount)}</div>
+          <div class="desc">${entry.desc || "-"}</div>
+        `;
+        el.appendChild(card);
+      });
+    }
+
+    function maxPageForCount(count) {
+      if (count <= 0) return 0;
+      return Math.floor((count - 1) / LOG_PAGE_SIZE);
+    }
+
+    function clampLogPages() {
+      incomeLogPage = Math.max(0, Math.min(incomeLogPage, maxPageForCount(incomes.length)));
+      deductionLogPage = Math.max(0, Math.min(deductionLogPage, maxPageForCount(deductions.length)));
+    }
+
+    let pendingDeleteUndo = null;
+    let pendingDeleteUndoTimer = null;
+
+    function hideDeleteUndo() {
+      document.getElementById("incomeUndoBar").style.display = "none";
+      document.getElementById("deductionUndoBar").style.display = "none";
+
+      if (pendingDeleteUndoTimer) {
+        clearTimeout(pendingDeleteUndoTimer);
+        pendingDeleteUndoTimer = null;
+      }
+
+      pendingDeleteUndo = null;
+    }
+
+    function showDeleteUndo(type, entry, originalIndex) {
+      if (pendingDeleteUndoTimer) clearTimeout(pendingDeleteUndoTimer);
+
+      const isDeduction = type === "deduction";
+      const incomeBar = document.getElementById("incomeUndoBar");
+      const deductionBar = document.getElementById("deductionUndoBar");
+
+      incomeBar.style.display = "none";
+      deductionBar.style.display = "none";
+
+      pendingDeleteUndo = {
+        type,
+        entry: { ...entry },
+        originalIndex
+      };
+
+      (isDeduction ? deductionBar : incomeBar).style.display = "flex";
+
+      pendingDeleteUndoTimer = setTimeout(() => {
+        hideDeleteUndo();
+      }, 5000);
+    }
+
+    function undoLastDelete() {
+      if (!pendingDeleteUndo) return;
+
+      const { type, entry, originalIndex } = pendingDeleteUndo;
+      const isDeduction = type === "deduction";
+      const list = isDeduction ? deductions : incomes;
+      const safeIndex = Math.max(0, Math.min(originalIndex, list.length));
+
+      list.splice(safeIndex, 0, entry);
+
+      const newestPosition = list.length - 1 - safeIndex;
+      const restoredPage = Math.max(0, Math.floor(newestPosition / LOG_PAGE_SIZE));
+
+      if (isDeduction) deductionLogPage = restoredPage;
+      else incomeLogPage = restoredPage;
+
+      hideDeleteUndo();
+      updateUI();
+      renderFullList(type);
+    }
+
+    function renderFullList(type) {
+      clampLogPages();
+
+      const isDeduction = type === "deduction";
+      const list = isDeduction ? deductions : incomes;
+      const page = isDeduction ? deductionLogPage : incomeLogPage;
+      const log = document.getElementById(isDeduction ? "deductionLog" : "incomeLog");
+      const count = document.getElementById(isDeduction ? "deductionCount" : "incomeCount");
+      const pageStatus = document.getElementById(isDeduction ? "deductionPageStatus" : "incomePageStatus");
+      const newerBtn = document.getElementById(isDeduction ? "deductionNewer" : "incomeNewer");
+      const olderBtn = document.getElementById(isDeduction ? "deductionOlder" : "incomeOlder");
+
+      const totalPages = Math.max(1, Math.ceil(list.length / LOG_PAGE_SIZE));
+      const entriesOnThisPage = list.length === 0
+        ? 0
+        : Math.min(LOG_PAGE_SIZE, Math.max(0, list.length - (page * LOG_PAGE_SIZE)));
+
+      count.textContent = `${list.length} / ${MAX_ENTRIES} entries stored`;
+      pageStatus.textContent = `${entriesOnThisPage} / ${LOG_PAGE_SIZE} • Page ${page + 1} of ${totalPages}`;
+      newerBtn.disabled = page === 0;
+      olderBtn.disabled = page >= totalPages - 1;
+
+      log.innerHTML = "";
+
+      if (!list.length) {
+        log.innerHTML = `<div class="empty">${isDeduction ? "No deductions added yet." : "No income added yet."}</div>`;
+        return;
+      }
+
+      const startNewest = page * LOG_PAGE_SIZE;
+      const endNewest = Math.min(startNewest + LOG_PAGE_SIZE, list.length);
+
+      for (let newestPos = startNewest; newestPos < endNewest; newestPos++) {
+        const realIndex = list.length - 1 - newestPos;
+        const entry = list[realIndex];
+
+        const row = document.createElement("div");
+        row.className = "log-row";
+        row.innerHTML = `
+          <div>${isDeduction ? "-" : ""}${moneySmart(entry.amount)}</div>
+          <div class="log-desc">${entry.desc || "-"}</div>
+          <button class="delete-btn" title="Delete">x</button>
+        `;
+
+        row.querySelector("button").addEventListener("click", () => {
+          const deletedEntry = list[realIndex];
+          list.splice(realIndex, 1);
+          showDeleteUndo(type, deletedEntry, realIndex);
+          clampLogPages();
+          updateUI();
+          renderFullList(type);
+        });
+
+        log.appendChild(row);
+      }
+    }
+
+    function updateUI() {
+      const grossCents = totalCents(incomes);
+      const dedCents = totalCents(deductions);
+      const rawNetCents = grossCents - dedCents;
+      const netCents = Math.max(-MONEY_LIMIT_CENTS, Math.min(MONEY_LIMIT_CENTS, rawNetCents));
+      const gross = grossCents / 100;
+      const ded = dedCents / 100;
+      const net = netCents / 100;
+      const tax = calcCurrentTax(net);
+
+      const isCompany = taxMode === "company";
+      const soleTraderMode = document.getElementById("soleTraderMode");
+      const companyMode = document.getElementById("companyMode");
+      const companyRateWrap = document.getElementById("companyRateWrap");
+      const company25 = document.getElementById("company25");
+      const company30 = document.getElementById("company30");
+
+      soleTraderMode.classList.toggle("active", !isCompany);
+      companyMode.classList.toggle("active", isCompany);
+      soleTraderMode.setAttribute("aria-pressed", String(!isCompany));
+      companyMode.setAttribute("aria-pressed", String(isCompany));
+
+      companyRateWrap.style.display = isCompany ? "block" : "none";
+      company25.classList.toggle("active", companyTaxRate === 0.25);
+      company30.classList.toggle("active", companyTaxRate === 0.30);
+      company25.setAttribute("aria-pressed", String(companyTaxRate === 0.25));
+      company30.setAttribute("aria-pressed", String(companyTaxRate === 0.30));
+
+      document.getElementById("fyLabel").textContent = `Financial Year: ${fyText()}`;
+      document.getElementById("incomeDisplay").textContent = moneySmart(net);
+
+      if (isCompany) {
+        document.querySelector(".threshold").textContent = "$0";
+        document.querySelector(".goal").textContent = "Company tax applies from the first $1 of taxable income.";
+        document.getElementById("taxEstimate").textContent = net > 0 ? `${money(tax, true)} tax owed estimate` : "";
+        document.getElementById("rateLabel").textContent = currentRateLabel(net);
+
+        let pct = net / BAR_CAP;
+        pct = Math.max(0, Math.min(1, pct));
+        document.getElementById("barFill").style.width = `${pct * 100}%`;
+      } else {
+        document.querySelector(".threshold").textContent = "$18,200";
+        document.querySelector(".goal").textContent = "The goal is to bring this back to $18,200.";
+        document.getElementById("taxEstimate").textContent = net > BASE ? `${money(tax, true)} tax owed estimate` : "";
+        document.getElementById("rateLabel").textContent = currentRateLabel(net);
+
+        let pct = (net - BASE) / (BAR_CAP - BASE);
+        pct = Math.max(0, Math.min(1, pct));
+        document.getElementById("barFill").style.width = `${pct * 100}%`;
+      }
+
+      renderBracketIndicators(net);
+      renderPreviews();
+      saveCurrentFY();
+    }
+
+    function switchTaxMode(nextMode) {
+      if (nextMode !== "soleTrader" && nextMode !== "company") return;
+      if (nextMode === taxMode) return;
+
+      // Save the current structure first, then load the other structure's
+      // completely separate FY logs.
+      saveCurrentFY();
+      hideDeleteUndo();
+
+      taxMode = nextMode;
+      incomeLogPage = 0;
+      deductionLogPage = 0;
+      incomes = [];
+      deductions = [];
+
+      loadCurrentFY();
+      updateUI();
+    }
+
+    function setCompanyTaxRate(nextRate) {
+      const rate = Number(nextRate) === 0.30 ? 0.30 : 0.25;
+      companyTaxRate = rate;
+      localStorage.setItem("taxTracker.companyTaxRate", String(companyTaxRate));
+      updateUI();
+    }
+
+    let advertisingReturnScreen = "main";
+
+    function showScreen(name) {
+      document.getElementById("mainScreen").style.display = name === "main" ? "block" : "none";
+      document.getElementById("incomeScreen").style.display = name === "income" ? "block" : "none";
+      document.getElementById("deductionScreen").style.display = name === "deduction" ? "block" : "none";
+      document.getElementById("advertisingScreen").style.display = name === "advertising" ? "block" : "none";
+    }
+
+    function currentVisibleScreenName() {
+      if (document.getElementById("incomeScreen").style.display === "block") return "income";
+      if (document.getElementById("deductionScreen").style.display === "block") return "deduction";
+      return "main";
+    }
+
+    async function openAdvertisingScreen() {
+      advertisingReturnScreen = currentVisibleScreenName();
+      showScreen("advertising");
+      window.scrollTo(0, 0);
+      await refreshAdBookingPanels();
+    }
+
+    function openDatePicker() {
+      pickerMonth = selectedMonth || (new Date().getMonth() + 1);
+      pickerDay = selectedDay || new Date().getDate();
+      buildDatePicker();
+      document.getElementById("dateModal").style.display = "flex";
+    }
+
+    function closeDatePicker() {
+      document.getElementById("dateModal").style.display = "none";
+    }
+
+    function buildDatePicker() {
+      const monthGrid = document.getElementById("monthGrid");
+      const dayGrid = document.getElementById("dayGrid");
+
+      monthGrid.innerHTML = "";
+      dayGrid.innerHTML = "";
+
+      for (let m = 1; m <= 12; m++) {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = monthShortName(m);
+        btn.addEventListener("click", () => {
+          pickerMonth = m;
+          if (pickerDay > daysInMonth(pickerMonth)) pickerDay = daysInMonth(pickerMonth);
+          buildDatePicker();
+        });
+        if (m === pickerMonth) btn.classList.add("selected");
+        monthGrid.appendChild(btn);
+      }
+
+      const maxDay = daysInMonth(pickerMonth);
+
+      for (let d = 1; d <= 31; d++) {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = d;
+        if (d === pickerDay && d <= maxDay) btn.classList.add("selected");
+        if (d > maxDay) btn.classList.add("disabled");
+        btn.addEventListener("click", () => {
+          pickerDay = d;
+          buildDatePicker();
+        });
+        dayGrid.appendChild(btn);
+      }
+    }
+
+    function openHelp() {
+      helpSlide = 0;
+      renderHelp();
+      document.getElementById("helpModal").style.display = "flex";
+    }
+
+    function renderHelp() {
+      const slides = helpSlides();
+      const slide = slides[helpSlide];
+      const helpText = document.getElementById("helpText");
+
+      if (slide.type === "brackets" || slide.type === "html") {
+        helpText.innerHTML = slide.content;
+      } else {
+        helpText.textContent = slide.content;
+      }
+
+      const continueLabel = "Continue";
+      document.getElementById("helpContinue").textContent = continueLabel;
+
+      const helpContinueTop = document.getElementById("helpContinueTop");
+      if (helpContinueTop) {
+        helpContinueTop.textContent = continueLabel;
+        helpContinueTop.addEventListener("click", advanceHelp);
+      }
+    }
+
+    function advanceHelp() {
+      const slides = helpSlides();
+      helpSlide++;
+      if (helpSlide >= slides.length) {
+        localStorage.setItem("taxTracker.seen", "true");
+        document.getElementById("helpModal").style.display = "none";
+      } else {
+        renderHelp();
+      }
+    }
+
+    document.getElementById("prevFY").addEventListener("click", () => {
+      const next = currentFYStart - 1;
+      if (next < baseFYStart - 3) return;
+      saveCurrentFY();
+      currentFYStart = next;
+      incomeLogPage = 0;
+      deductionLogPage = 0;
+      loadCurrentFY();
+      updateUI();
+    });
+
+    document.getElementById("nextFY").addEventListener("click", () => {
+      const next = currentFYStart + 1;
+      if (next > baseFYStart + 3) return;
+      saveCurrentFY();
+      currentFYStart = next;
+      incomeLogPage = 0;
+      deductionLogPage = 0;
+      loadCurrentFY();
+      updateUI();
+    });
+
+    const amountInput = document.getElementById("amountInput");
+
+    function enforceAmountLimit() {
+      if (amountInput.value === "") return;
+      const rawAmount = Number(amountInput.value);
+
+      if (!Number.isFinite(rawAmount) || rawAmount < 0) {
+        amountInput.value = "";
+        return;
+      }
+
+      if (rawAmount > MONEY_LIMIT) {
+        amountInput.value = MONEY_LIMIT.toFixed(2);
+      }
+    }
+
+    amountInput.addEventListener("input", enforceAmountLimit);
+    amountInput.addEventListener("change", enforceAmountLimit);
+    amountInput.addEventListener("blur", () => {
+      enforceAmountLimit();
+      if (amountInput.value === "") return;
+      const amount = Math.abs(clampMoney(Number(amountInput.value)));
+      amountInput.value = String(amount);
+    });
+
+    document.getElementById("addIncome").addEventListener("click", () => addEntry(true));
+    document.getElementById("addDeduction").addEventListener("click", () => addEntry(false));
+
+    document.getElementById("soleTraderMode").addEventListener("click", () => switchTaxMode("soleTrader"));
+    document.getElementById("companyMode").addEventListener("click", () => switchTaxMode("company"));
+    document.getElementById("company25").addEventListener("click", () => setCompanyTaxRate(0.25));
+    document.getElementById("company30").addEventListener("click", () => setCompanyTaxRate(0.30));
+
+    document.getElementById("viewIncome").addEventListener("click", () => {
+      incomeLogPage = 0;
+      renderFullList("income");
+      showScreen("income");
+    });
+
+    document.getElementById("viewDeductions").addEventListener("click", () => {
+      deductionLogPage = 0;
+      renderFullList("deduction");
+      showScreen("deduction");
+    });
+
+    document.getElementById("incomeBack").addEventListener("click", () => showScreen("main"));
+    document.getElementById("deductionBack").addEventListener("click", () => showScreen("main"));
+    document.getElementById("advertisingBack").addEventListener("click", () => {
+      showScreen(advertisingReturnScreen);
+      window.scrollTo(0, 0);
+    });
+
+    document.addEventListener("click", event => {
+      const openButton = event.target.closest(".ad-open-btn");
+      if (!openButton) return;
+      openAdvertisingScreen();
+    });
+
+    document.getElementById("incomeUndoBtn").addEventListener("click", undoLastDelete);
+    document.getElementById("deductionUndoBtn").addEventListener("click", undoLastDelete);
+
+    document.getElementById("incomeOlder").addEventListener("click", () => {
+      if (incomeLogPage < maxPageForCount(incomes.length)) incomeLogPage++;
+      renderFullList("income");
+    });
+
+    document.getElementById("incomeNewer").addEventListener("click", () => {
+      if (incomeLogPage > 0) incomeLogPage--;
+      renderFullList("income");
+    });
+
+    document.getElementById("deductionOlder").addEventListener("click", () => {
+      if (deductionLogPage < maxPageForCount(deductions.length)) deductionLogPage++;
+      renderFullList("deduction");
+    });
+
+    document.getElementById("deductionNewer").addEventListener("click", () => {
+      if (deductionLogPage > 0) deductionLogPage--;
+      renderFullList("deduction");
+    });
+
+    document.getElementById("dateBtn").addEventListener("click", openDatePicker);
+    document.getElementById("dateCancel").addEventListener("click", closeDatePicker);
+    document.getElementById("dateClear").addEventListener("click", () => {
+      selectedMonth = 0;
+      selectedDay = 0;
+      renderDateButton();
+      closeDatePicker();
+    });
+    document.getElementById("dateDone").addEventListener("click", () => {
+      selectedMonth = pickerMonth;
+      selectedDay = Math.min(pickerDay, daysInMonth(pickerMonth));
+      renderDateButton();
+      closeDatePicker();
+    });
+
+    document.getElementById("helpBtn").addEventListener("click", openHelp);
+    document.getElementById("helpContinue").addEventListener("click", advanceHelp);
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      const structureName = taxMode === "company" ? "Company" : "Sole Trader";
+      document.getElementById("resetText").textContent = `Are you sure you want to reset ${structureName} ${fyText()}?`;
+      document.getElementById("resetModal").style.display = "flex";
+    });
+
+    document.getElementById("resetNo").addEventListener("click", () => {
+      document.getElementById("resetModal").style.display = "none";
+    });
+
+    document.getElementById("resetYes").addEventListener("click", () => {
+      incomes = [];
+      deductions = [];
+      saveCurrentFY();
+      updateUI();
+      document.getElementById("resetModal").style.display = "none";
+    });
+
+    loadCurrentFY();
+    renderDateButton();
+    updateUI();
+    refreshAdBookingPanels();
+
+
+    function adStartOfWeek(date = new Date()) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function adDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function adWeekEnd(start) {
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      return end;
+    }
+
+    function adFormatShortDate(date) {
+      return date.toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short"
+      });
+    }
+
+    function adFormatWeek(start) {
+      const end = adWeekEnd(start);
+      return `${adFormatShortDate(start)} – ${adFormatShortDate(end)} ${end.getFullYear()}`;
+    }
+
+    function adLocalTestCount(weekStart) {
+      const key = adDateKey(weekStart);
+
+      if (Object.prototype.hasOwnProperty.call(AD_TEST_WEEKLY_COUNTS, key)) {
+        return Math.max(0, Number(AD_TEST_WEEKLY_COUNTS[key]) || 0);
+      }
+
+      return 0;
+    }
+
+    async function adFetchWeekCount(weekStart) {
+      // Replace this with the real backend call later.
+      // It must return the GLOBAL number of paid/reserved ads for this week.
+      return adLocalTestCount(weekStart);
+    }
+
+    async function adFindNextAvailableWeek() {
+      let weekStart = adStartOfWeek();
+
+      for (let i = 0; i < 53; i++) {
+        const booked = await adFetchWeekCount(weekStart);
+
+        if (booked < AD_SLOTS_PER_WEEK) {
+          return {
+            weekStart: new Date(weekStart),
+            weekEnd: adWeekEnd(weekStart),
+            booked,
+            remaining: AD_SLOTS_PER_WEEK - booked
+          };
+        }
+
+        weekStart = new Date(weekStart);
+        weekStart.setDate(weekStart.getDate() + 7);
+      }
+
+      return null;
+    }
+
+    function adSetPanelMessage(panel, html) {
+      const result = panel.querySelector(".ad-booking-result");
+      if (!result) return;
+      result.innerHTML = html;
+      result.style.display = "block";
+    }
+
+    function renderAdSpotRows(booking) {
+      const weekLabel = document.getElementById("adSpotsWeek");
+      const list = document.getElementById("adSpotsList");
+      if (!weekLabel || !list) return;
+
+      list.innerHTML = "";
+
+      if (!booking) {
+        weekLabel.textContent = "No advertising week is currently available.";
+        const row = document.createElement("div");
+        row.className = "ad-spot-row";
+        row.innerHTML = '<div class="ad-spot-name">No spots available</div><div class="ad-spot-status taken">Full</div>';
+        list.appendChild(row);
+        return;
+      }
+
+      const currentWeekKey = adDateKey(adStartOfWeek());
+      const bookingWeekKey = adDateKey(booking.weekStart);
+      const isCurrentWeek = currentWeekKey === bookingWeekKey;
+
+      weekLabel.textContent = isCurrentWeek
+        ? `${adFormatWeek(booking.weekStart)} — ${booking.remaining} of ${AD_SLOTS_PER_WEEK} spots available`
+        : `This week is full. Next available week: ${adFormatWeek(booking.weekStart)} — ${booking.remaining} of ${AD_SLOTS_PER_WEEK} spots available`;
+
+      for (let i = 1; i <= AD_SLOTS_PER_WEEK; i++) {
+        const taken = i <= booking.booked;
+        const row = document.createElement("div");
+        row.className = "ad-spot-row";
+
+        const name = document.createElement("div");
+        name.className = "ad-spot-name";
+        name.textContent = `Advertising Spot ${i}`;
+
+        const status = document.createElement("div");
+        status.className = `ad-spot-status ${taken ? "taken" : "available"}`;
+        status.textContent = taken ? "Taken" : "Available";
+
+        row.appendChild(name);
+        row.appendChild(status);
+        list.appendChild(row);
+      }
+    }
+
+    async function refreshAdBookingPanels() {
+      const panels = [...document.querySelectorAll(".ad-booking-panel")];
+      if (!panels.length) return;
+
+      panels.forEach(panel => {
+        const button = panel.querySelector(".ad-book-btn");
+        const date = panel.querySelector(".ad-booking-date");
+
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Checking availability...";
+        }
+
+        if (date) {
+          date.textContent = "Checking availability...";
+        }
+      });
+
+      const booking = await adFindNextAvailableWeek();
+      renderAdSpotRows(booking);
+
+      panels.forEach(panel => {
+        const button = panel.querySelector(".ad-book-btn");
+        const date = panel.querySelector(".ad-booking-date");
+
+        if (!booking) {
+          if (date) date.textContent = "No advertising week currently available.";
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Unavailable";
+          }
+          return;
+        }
+
+        const currentWeekKey = adDateKey(adStartOfWeek());
+        const bookingWeekKey = adDateKey(booking.weekStart);
+        const isCurrentWeek = bookingWeekKey === currentWeekKey;
+
+        if (date) {
+          date.textContent = isCurrentWeek
+            ? `${adFormatWeek(booking.weekStart)} — ${booking.remaining} of ${AD_SLOTS_PER_WEEK} spots left`
+            : `This week is full. Next opening: ${adFormatWeek(booking.weekStart)} — ${booking.remaining} of ${AD_SLOTS_PER_WEEK} spots left`;
+        }
+
+        if (button) {
+          button.disabled = false;
+          button.dataset.weekStart = bookingWeekKey;
+          button.textContent = isCurrentWeek
+            ? `Advertise this week — $${AD_PRICE_AUD}`
+            : `Book ${adFormatShortDate(booking.weekStart)}–${adFormatShortDate(booking.weekEnd)} — $${AD_PRICE_AUD}`;
+        }
+      });
+    }
+
+    async function beginAppleAdPurchase(panel) {
+      const booking = await adFindNextAvailableWeek();
+
+      if (!booking) {
+        adSetPanelMessage(panel, "No advertising week is currently available.");
+        return;
+      }
+
+      const payload = {
+        productId: AD_PRODUCT_ID,
+        priceAUD: AD_PRICE_AUD,
+        weekStart: adDateKey(booking.weekStart),
+        weekEnd: adDateKey(booking.weekEnd),
+        displayWeek: adFormatWeek(booking.weekStart)
+      };
+
+      // Native iPhone StoreKit bridge.
+      // The iOS wrapper should register a WKScriptMessageHandler named "adPurchase".
+      if (
+        window.webkit &&
+        window.webkit.messageHandlers &&
+        window.webkit.messageHandlers.adPurchase
+      ) {
+        window.webkit.messageHandlers.adPurchase.postMessage(payload);
+
+        adSetPanelMessage(
+          panel,
+          `Opening Apple purchase for <strong>${payload.displayWeek}</strong>...`
+        );
+        return;
+      }
+
+      // Never fake payment success in the browser/PWA version.
+      adSetPanelMessage(
+        panel,
+        `<strong>${payload.displayWeek}</strong><br>` +
+        `The booking screen is ready. Apple In-App Purchase still needs to be connected in the native iPhone build, and the real 5-slot count needs the shared booking backend.`
+      );
+    }
+
+    // Native iOS code calls this only AFTER Apple confirms the purchase and
+    // the backend has reserved the week/slot.
+    window.completeAdPurchase = function(result) {
+      const panels = [...document.querySelectorAll(".ad-booking-panel")];
+
+      if (!result || result.success !== true) {
+        panels.forEach(panel => {
+          adSetPanelMessage(panel, "The Apple purchase was not completed.");
+        });
+        return;
+      }
+
+      const displayWeek =
+        result.displayWeek ||
+        `${result.weekStart || ""} – ${result.weekEnd || ""}`.trim();
+
+      const bookingCode =
+        result.bookingCode || "Shown in your purchase confirmation";
+
+      panels.forEach(panel => {
+        adSetPanelMessage(
+          panel,
+          `<strong>Payment received.</strong><br>` +
+          `Your advertisement is scheduled for <strong>${displayWeek}</strong>.<br><br>` +
+          `Send your logo or JPEG to <strong>${AD_SUBMISSION_EMAIL}</strong>.<br>` +
+          `Include booking code: <strong>${bookingCode}</strong>.<br><br>` +
+          `Recommended image: 1500 × 1000 px, JPG or PNG. ` +
+          `Your advertisement will be reviewed before going live.`
+        );
+      });
+
+      refreshAdBookingPanels();
+    };
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest(".ad-book-btn");
+      if (!button) return;
+
+      const panel = button.closest(".ad-booking-panel");
+      if (!panel) return;
+
+      beginAppleAdPurchase(panel);
+    });
+
+    document.querySelectorAll(".weekly-ad").forEach((weeklyAd) => {
+      const slides = Array.from(weeklyAd.querySelectorAll(".weekly-ad-slide"));
+      const footer = weeklyAd.nextElementSibling;
+      const timer = footer ? footer.querySelector(".weekly-ad-timer") : null;
+
+      let index = 0;
+      let secondsLeft = 60;
+
+      if (slides.length > 0) {
+        slides.forEach(slide => slide.classList.remove("active"));
+        slides[0].classList.add("active");
+      }
+
+      function renderTimer() {
+        if (!timer) return;
+        const minutes = Math.floor(secondsLeft / 60);
+        const seconds = secondsLeft % 60;
+        timer.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function advanceAd() {
+        if (slides.length <= 1) return;
+        slides[index].classList.remove("active");
+        index = (index + 1) % slides.length;
+        slides[index].classList.add("active");
+        secondsLeft = 60;
+        renderTimer();
+      }
+
+      if (slides.length > 1 && timer) {
+        timer.style.display = "block";
+        renderTimer();
+
+        setInterval(() => {
+          secondsLeft--;
+
+          if (secondsLeft <= 0) {
+            advanceAd();
+          } else {
+            renderTimer();
+          }
+        }, 1000);
+      }
+    });
+
+    if (localStorage.getItem("taxTracker.seen") !== "true") {
+      openHelp();
+    }
+  </script>
+<script>
+/* Appearance and accessibility only; the original calculation script is intact. */
+(() => {
+  const byId = id => document.getElementById(id);
+  const themeButton = byId('theme-toggle');
+  function setTheme(dark) {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    themeButton.setAttribute('aria-checked', String(dark));
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#101113' : '#f5f5f7';
+    try { localStorage.setItem('simpleTaxAU.theme.v1', dark ? 'dark' : 'light'); } catch {}
+  }
+  setTheme(document.documentElement.dataset.theme === 'dark');
+  themeButton.addEventListener('click', () => setTheme(document.documentElement.dataset.theme !== 'dark'));
+  document.querySelector('.app-brand').addEventListener('click', event => {
+    event.preventDefault();
+    showScreen('main');
+    window.scrollTo(0, 0);
+  });
+  function refreshTotals() {
+    byId('ui-income-total').textContent = moneySmart(totalOf(incomes));
+    byId('ui-deduction-total').textContent = moneySmart(totalOf(deductions));
+  }
+  new MutationObserver(refreshTotals).observe(byId('incomeDisplay'), { childList:true });
+  refreshTotals();
+
+  byId('close-help').addEventListener('click', () => {
+    byId('helpModal').style.display = 'none';
+    localStorage.setItem('taxTracker.seen', 'true');
+  });
+  const modals = [...document.querySelectorAll('.modal-backdrop')];
+  let activeModal = null;
+  let returnFocus = null;
+  function focusable(modal) {
+    return [...modal.querySelectorAll('button:not(:disabled), input, [tabindex="0"]')]
+      .filter(node => node.getClientRects().length);
+  }
+  function syncModal() {
+    const open = modals.find(modal => modal.style.display === 'flex') || null;
+    if (open === activeModal) return;
+    if (open) {
+      returnFocus = document.activeElement;
+      activeModal = open;
+      document.documentElement.classList.add('tax-modal-open');
+      (open.id === 'helpModal' ? byId('close-help') : focusable(open)[0])?.focus({preventScroll:true});
+    } else {
+      activeModal = null;
+      document.documentElement.classList.remove('tax-modal-open');
+      if (returnFocus?.isConnected && returnFocus.getClientRects().length) returnFocus.focus({preventScroll:true});
+      returnFocus = null;
+    }
+  }
+  const modalObserver = new MutationObserver(syncModal);
+  modals.forEach(modal => modalObserver.observe(modal, {attributes:true,attributeFilter:['style']}));
+  document.addEventListener('keydown', event => {
+    if (!activeModal) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      byId(activeModal.id === 'dateModal' ? 'dateCancel' : activeModal.id === 'resetModal' ? 'resetNo' : 'close-help').click();
+    } else if (event.key === 'Tab') {
+      const nodes = focusable(activeModal);
+      if (!nodes.length) return;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !activeModal.contains(document.activeElement))) { event.preventDefault();last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !activeModal.contains(document.activeElement))) { event.preventDefault();first.focus(); }
+    }
+  });
+  syncModal();
+  function labelDateChoices() {
+    byId('dayGrid').querySelectorAll('.choice-btn').forEach(button => { button.disabled = button.classList.contains('disabled'); });
+  }
+  new MutationObserver(labelDateChoices).observe(byId('dayGrid'), {childList:true});
+
+  document.querySelectorAll('.weekly-ad-slide img').forEach(image => {
+    function showFallback() {
+      if (image.naturalWidth > 0) return;
+      image.hidden = true;
+      if (image.parentElement.querySelector('.ad-art-fallback')) return;
+      const fallback = document.createElement('div');
+      fallback.className = 'ad-art-fallback';
+      fallback.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 9 1.5-5h13L20 9M4 9a2.6 2.6 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0A2.6 2.6 0 0 0 20 9M5.5 12v8h13v-8M10 20v-5h4v5"/></svg><strong>A place for something local.</strong><small>Weekly community advertising</small>';
+      image.parentElement.append(fallback);
+    }
+    image.addEventListener('error', showFallback);
+    if (image.complete && image.naturalWidth === 0) showFallback();
+  });
+})();
+</script></body>
+</html>
