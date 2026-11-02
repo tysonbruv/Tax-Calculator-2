@@ -1269,6 +1269,7 @@
   --bg:#f5f5f7; --panel:#fff; --input:#f7f7f9; --border:#e2e4ea; --border-soft:#e8e9ee;
   --text:#1d1d1f; --muted:#6d6e78; --muted2:#858792; --accent:#0071e3; --accent2:#426b91;
   --accent-soft:#edf4ff; --accent-line:#d7e5f8; --red:#bc414b; --green:#26754f; --hover:#eeeef2;
+  --bar-green:#248a3d; --bar-yellow:#b38600; --bar-orange:#d66b00;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   font-synthesis:none;
 }
@@ -1277,6 +1278,7 @@
   --bg:#101113; --panel:#1c1d20; --input:#25272d; --border:#393c45; --border-soft:#30333b;
   --text:#f5f5f7; --muted:#adafba; --muted2:#9699a4; --accent:#80b8ff; --accent2:#bfd2ec;
   --accent-soft:#1e2c40; --accent-line:#31445f; --red:#ff9ca0; --green:#8bcba7; --hover:#2a2d34;
+  --bar-green:#32d74b; --bar-yellow:#ffd60a; --bar-orange:#ff9f0a;
 }
 [hidden] { display:none!important; }
 body { display:block; padding:0; font-family:inherit; -webkit-font-smoothing:antialiased; }
@@ -1342,7 +1344,11 @@ h2 { font-size:20px; line-height:1.3; letter-spacing:-.5px; font-weight:610; }
 .summary-metrics dt { font-size:11px; color:var(--muted); margin-bottom:7px; }
 .summary-metrics dd { margin:0; font-size:21px; font-weight:550; letter-spacing:-.5px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
 .bar { position:relative; inset:auto; height:5px; margin:35px 0 13px; background:var(--border); width:100%; }
-.bar-fill { background:#0071e3; min-height:5px; }
+.bar-fill { background:var(--bar-green); min-height:5px; transition:width .18s ease,background-color .35s ease; }
+.bar-fill[data-tax-level="building"] { background-color:var(--bar-yellow); }
+.bar-fill[data-tax-level="higher"] { background-color:var(--bar-orange); }
+.bar[data-tax-level="clear"]::before { content:""; position:absolute; left:0; top:0; width:5px; height:5px; border-radius:50%; background:var(--bar-green); }
+@media(prefers-reduced-motion:reduce) { .bar-fill { transition:none; } }
 .bar-bracket-indicator { color:var(--muted2); font-size:10px; font-weight:500; top:-12px; }
 .threshold { display:none; }
 .goal { position:static; color:var(--muted); font-size:10px; line-height:1.8; margin-top:auto; }
@@ -3076,9 +3082,25 @@ html.tax-modal-open { overflow:hidden; }
     showScreen('main');
     window.scrollTo(0, 0);
   });
+  function taxBarLevel(net) {
+    const tax = calcCurrentTax(net);
+    if (tax <= 0) return 'clear';
+    // Use the selected year's first taxable band as the bill-size scale in both modes.
+    const firstTaxableBand = taxRulesForYear(currentFYStart).brackets.find(bracket => bracket.rate > 0);
+    const firstBandTax = calcProgressiveTax(firstTaxableBand.to);
+    return tax <= firstBandTax ? 'building' : 'higher';
+  }
   function refreshTotals() {
     byId('ui-income-total').textContent = moneySmart(totalOf(incomes));
     byId('ui-deduction-total').textContent = moneySmart(totalOf(deductions));
+    const net = clampMoney(totalOf(incomes) - totalOf(deductions));
+    const level = taxBarLevel(net);
+    const fill = byId('barFill');
+    const bar = fill.parentElement;
+    fill.dataset.taxLevel = level;
+    bar.dataset.taxLevel = level;
+    bar.setAttribute('role', 'img');
+    bar.setAttribute('aria-label', `Estimated tax: ${money(calcCurrentTax(net), true)}. ${level === 'clear' ? 'No tax estimated' : level === 'building' ? 'Tax bill building' : 'Higher tax bill'}.`);
   }
   new MutationObserver(refreshTotals).observe(byId('incomeDisplay'), { childList:true });
   refreshTotals();
